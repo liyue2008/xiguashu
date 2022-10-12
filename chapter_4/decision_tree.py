@@ -2,7 +2,6 @@
 试编程实现基于信息嫡进行划分选择的决策树算法，并为表4.3中数
 据生成一棵决策树.
 """
-from typing import Self
 from platform import node
 from collections import Counter
 import pandas as pd
@@ -29,10 +28,10 @@ class TrainingSet:
     def len(self) -> int:
         return len(self.labels)
 
-    def subset_by_attr(self, attr_name: str, attr_value) -> Self:
+    def subset_by_attr(self, attr_name: str, attr_value):
         """计算训练集 D 中在属性 attr_name 上取值为 attr_value 的样本子集
         """
-        return Self(self.samples[self.samples[attr_name] == attr_value], self.label_name)
+        return TrainingSet(self.samples[self.samples[attr_name] == attr_value], self.label_name)
 
 
 class Attribute:
