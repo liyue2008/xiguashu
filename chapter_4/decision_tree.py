@@ -1,7 +1,7 @@
 """
-试编程实现基于信息嫡进行划分选择的决策树算法，并为表4.3中数
-据生成一棵决策树.
+试编程实现基于信息熵进行划分选择的决策树算法，并为表4.3中数据生成一棵决策树.
 """
+import math
 from platform import node
 from collections import Counter
 import pandas as pd
@@ -10,8 +10,7 @@ d = pd.read_csv('西瓜数据集 3.0.csv')
 print(d.loc[9, '根蒂'])
 
 class TrainingSet:
-    """
-    TrainingSet表示一个训练集，包含训练数据集和数据的标记。
+    """TrainingSet表示一个训练集，包含训练数据集和数据的标记。
 
     Attributes
     ----------
@@ -26,7 +25,7 @@ class TrainingSet:
         self.label_name = label_name
     
     def len(self) -> int:
-        return len(self.labels)
+        return len(self.samples.index)
 
     def subset_by_attr(self, attr_name: str, attr_value):
         """计算训练集 D 中在属性 attr_name 上取值为 attr_value 的样本子集
@@ -35,23 +34,21 @@ class TrainingSet:
 
 
 class Attribute:
-    """
-    AttributeSet表示一个样本的一个属性，包含属性名称和属性的全部类别（取值范围）
+    """AttributeSet表示一个样本的一个属性，包含属性名称和属性的全部类别(取值范围)
 
     Attributes
     ----------
     name : str
         属性名称;
     values : set
-        属性的全部类别（取值范围）.
+        属性的全部类别(取值范围).
     """
-    def __init__(self, name: str, values: set = set()) -> None:
+    def __init__(self, name: str = '', values: set = set()) -> None:
         self.name = name
         self.values = values
         
 class DecisionTreeNode:
-    """
-    DecisionTreeNode表示一个一个决策树的节点和它的所有子节点，实际上也是一个决策树。
+    """DecisionTreeNode表示一个一个决策树的节点和它的所有子节点，实际上也是一个决策树。
 
     Attributes
     ----------
@@ -59,7 +56,7 @@ class DecisionTreeNode:
         最优划分属性名称，例如：‘色泽’;
     children : dict
         key : str
-            分类（最优划分属性值），例如：'青绿'；
+            分类(最优划分属性值)，例如：'青绿'；
         value : DecisionTreeNode
             子节点
         全部子节点.
@@ -90,11 +87,75 @@ def all_samples_same(D: TrainingSet, A: set) -> bool:
         if (not all_same(D.samples[a.name].values)):
             return False
     return True
-def majority_in_list(l: list): 
+def majority_in_list(l: list):
+    """获取list中的大多数(值相同且个数最多的元素的值)。
+    """
     c = Counter(l)
     return c.most_common()[0]['value']
+def ent(D: TrainingSet) -> float:
+    """计算样本集合 D 的信息熵(information entropy)
+    
+    Parameters
+    ----------
+    D : TrainingSet
+        样本集合 D。
 
+    Returns
+    -------
+    样本集合 D 的信息熵(information entropy)
+    """
+    
+    """计算样本中各分类的数量，例如：
+        好瓜
+        是     2
+        否     1
+        Name: 好瓜, dtype: int64
+    """ 
+    df_count_by_class = D.samples.groupby([D.label_name])[D.label_name].count()
+    negative_ent = 0
+    for index, row in df_count_by_class.iterrows():
+        pk = row[1] / D.len()
+        log2pk = 0 if pk == 0 else math.log2(pk)
+        negative_ent += pk * log2pk
+    
+    return - negative_ent
 
+def gain(D: TrainingSet, a: Attribute) -> float:
+    """计算样本 D 在属性 a 上的信息增益(information entropy).
+    """
+    ent_of_D = ent(D)
+    len_of_D = D.len()
+    t = 0
+    for av in a.values:
+        Dv = D.subset_by_attr(a.name, av)
+        t += ( Dv.len() / len_of_D ) * ent_of_D
+    return ent_of_D - t   
+
+def selet_best_attribute_method_ID3(D: TrainingSet, A: set) -> Attribute:
+    """ID3决策树的分类选择算法.
+    用信息增益来进行决策树的划分属性选择, 选择属性a* = arg max Gain(D,a).
+
+    Parameters
+    ----------
+    D : TrainingSet
+        训练集 D = {(x1, y1), (x2, y2), ... , (xm, ym)};
+    A : set of Attribute
+        属性集 A = {a1, a2, ... , ad};
+
+    Returns
+    -------
+    best_attribute : Attribute
+        基于ID3选择的信息增益最大的属性.
+    """
+    max_attr = Attribute()
+    max_attr_gain = 0
+    for a in A:
+        gain_a = gain(D, a);
+        if gain_a > max_attr_gain:
+            max_attr_gain = gain_a
+            max_attr = a
+    return max_attr
+    
 def tree_generate(D: TrainingSet, A: set, selet_best_attribute_method) -> DecisionTreeNode : 
     """决策树学习基本算法的实现
 
