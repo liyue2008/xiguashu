@@ -31,9 +31,11 @@ class Attribute:
         self.values = values
         self.is_continuous = is_continuous
     def __str__(self) -> str:
-        return self.name
-    def __repr__(self) -> str:
-        return self.name
+        if self.is_continuous:
+            return 'Continuous attribute: name=%s' % self.name
+        else:
+            return 'Discrete attribute: name=%s, values=%s' % (self.name, self.values)
+
         
 
 class TrainingSet:
@@ -47,21 +49,22 @@ class TrainingSet:
         在训练数据集samples中，标记列的列名。
     """
     def  __init__(self, samples: pd.DataFrame, label_name: str = '') -> None :
-        # TODO: 检查samples和labels长度是否一致，不一致则抛出异常。
         self.samples = samples
         self.label_name = label_name
     def __eq__(self, other):
         return (self.label_name == other.label_name and self.samples.equals(other.samples))
     def __str__(self) -> str:
-        return "label_name: %s\nsamples:\n%s" % (self.label_name, self.samples)
+        return "TrainingSet: label_name=%s, samples(%d):\n%s" % (self.label_name, len(self.samples), self.samples)
+    def __repr__(self) -> str:
+        return self.__str__()
     def len(self) -> int:
         return len(self.samples.index)
 
     def partition_by_attr(self, a: Attribute):
-        """计算训练集 D 中在属性 attr_name 上取值为 attr_values 的样本子集
+        """将训练集 D 按照离散属性 a 的取值, 为a的每个取值划分为一个子集Da, 并以Dictionary的形式返回这些子集.  
         Returns
         -------
-        返回一个Dictionary, key是属性取值, value是对应的D的子集.
+        返回一个Dictionary, key是属性取值, value是对应的Da的子集.
 
         """
         ret = {}
@@ -216,8 +219,8 @@ def gain_discrete(D: TrainingSet, a: Attribute) -> float:
     len_of_D = D.len()
     # print('len_of_D: %.3f\n' % len_of_D)
     t = 0
-    for av in a.values:
-        Dv = D.subset_by_attr(a.name, av)
+    dict = D.partition_by_attr(a)
+    for Dv in dict.values():
         t += ( Dv.len() / len_of_D ) * ent(Dv)
         # print('\t%s = %s: %.3f\n%s' % (a.name, av, ( Dv.len() / len_of_D ) * ent(Dv), Dv))
     # print('t: %.3f\n' % t)

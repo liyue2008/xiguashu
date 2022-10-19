@@ -1,4 +1,5 @@
 #-*-coding:utf-8-*- 
+import os
 import unittest as ut
 import decision_tree as dt
 import pandas as pd
@@ -12,7 +13,7 @@ class TestDecisionTreeMethods(ut.TestCase):
     def test_majority_in_list(self):
         self.assertEqual('好瓜', dt.majority_in_list(['好瓜', '好瓜', '好瓜', '好瓜', '好瓜', '好瓜']))
         self.assertEqual('坏瓜', dt.majority_in_list(['好瓜', '坏瓜', '未知', '好瓜', '坏瓜', '坏瓜']))
-    def test_TrainingSet_subset_by_attr(self):
+    def test_TrainingSet_partition_by_attr(self):
         data = {
             '编号': [1, 2, 3, 4],
             '色泽': ['乌黑', '乌黑', '乌黑', '乌黑'],
@@ -20,27 +21,36 @@ class TestDecisionTreeMethods(ut.TestCase):
             '敲声': ['沉闷', '沉闷', '沉闷', '沉闷'],
             '好瓜': ['是', '是', '是', '否']
         }
-        df = pd.DataFrame(data)
-        df.set_index('编号', inplace=True)
+        df = pd.DataFrame(data).set_index('编号')
+        
         ts = dt.TrainingSet(df, '好瓜')
-        attr_name = '根蒂'
-        attr_value = '蜷缩'
+        a = dt.Attribute('根蒂', {'蜷缩', '硬挺', '稍蜷'})
+        
 
         expect_data = {
-            '编号': [1, 3],
-            '色泽': ['乌黑', '乌黑'],
-            '根蒂': ['蜷缩', '蜷缩'],
-            '敲声': ['沉闷', '沉闷'],
-            '好瓜': ['是', '是']
+            '蜷缩': dt.TrainingSet(pd.DataFrame({
+                '编号': [1, 3],
+                '色泽': ['乌黑', '乌黑'],
+                '根蒂': ['蜷缩', '蜷缩'],
+                '敲声': ['沉闷', '沉闷'],
+                '好瓜': ['是', '是']
+            }).set_index('编号'), '好瓜'),'硬挺': dt.TrainingSet(pd.DataFrame({
+                '编号': [2],
+                '色泽': ['乌黑'],
+                '根蒂': ['硬挺'],
+                '敲声': ['沉闷'],
+                '好瓜': ['是']
+            }).set_index('编号'), '好瓜'),'稍蜷': dt.TrainingSet(pd.DataFrame({
+                '编号': [4],
+                '色泽': ['乌黑'],
+                '根蒂': ['稍蜷'],
+                '敲声': ['沉闷'],
+                '好瓜': ['否']
+            }).set_index('编号'), '好瓜')
         }
-        expect_df = pd.DataFrame(expect_data)
-        expect_df.set_index('编号', inplace=True)
-        expect_ts = dt.TrainingSet(expect_df, '好瓜')
-
-        sub_ts = ts.subset_by_attr(attr_name, attr_value)
-        # print("Expected training set:\n%s\n" % expect_ts)
-        # print("Actrual training set:\n%s\n" % sub_ts)
-        self.assertEqual(expect_ts, sub_ts)
+    
+        sub_ts = ts.partition_by_attr(a)
+        self.assertDictEqual(expect_data, sub_ts)
        
     def test_TrainingSet_all_samples_same(self):
         data = {
@@ -68,7 +78,7 @@ class TestDecisionTreeMethods(ut.TestCase):
         self.assertTrue(ts.all_samples_same(a2))
     def test_ent(self):
         expect_ent = 0.998
-        data_file = '西瓜数据集 2.0.csv'
+        data_file = 'chapter_4/西瓜数据集 2.0.csv'
         df = pd.read_csv(data_file)
         df.set_index('编号', inplace=True)
         D = dt.TrainingSet(df, '好瓜')
@@ -76,9 +86,10 @@ class TestDecisionTreeMethods(ut.TestCase):
         # print('actrual_ent = %d\n' % actrual_ent)
         self.assertEqual(expect_ent, round(actrual_ent, 3))
     def test_gain(self):
+        print(os.getcwd())
         a = dt.Attribute('色泽', {'青绿', '乌黑', '浅白'})
         expect_gain = 0.108
-        data_file = '西瓜数据集 2.0.csv'
+        data_file = 'chapter_4/西瓜数据集 2.0.csv'
         df = pd.read_csv(data_file)
         df.set_index('编号', inplace=True)
         D = dt.TrainingSet(df, '好瓜')
