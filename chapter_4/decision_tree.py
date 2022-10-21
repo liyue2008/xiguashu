@@ -1,7 +1,5 @@
 #-*-coding:utf-8-*- 
-from cProfile import label
 import math
-from platform import node
 from collections import Counter
 from typing import Tuple
 import pandas as pd
@@ -15,7 +13,7 @@ def majority_in_list(l: list):
     c = Counter(l)
     return c.most_common()[0][0]
 class Attribute:
-    """AttributeSet表示一个样本的一个属性，包含属性名称和属性的全部类别(取值范围)
+    """AttributeSet表示一个样本的一个属性, 包含属性名称和属性的全部类别(取值范围)
 
     Attributes
     ----------
@@ -35,6 +33,8 @@ class Attribute:
             return 'Continuous attribute: name=%s' % self.name
         else:
             return 'Discrete attribute: name=%s, values=%s' % (self.name, self.values)
+    def __repr__(self) -> str:
+        return self.__str__()
 
         
 
@@ -176,20 +176,19 @@ def ent(D: TrainingSet) -> float:
         Name: 好瓜, dtype: int64
     """ 
     df_count_by_class = D.samples.groupby([D.label_name])[D.label_name].count()
-    # print('df_count_by_class:\n%s\n' % df_count_by_class)
     negative_ent = 0
     for count in df_count_by_class:
         pk = count / D.len()
         log2pk = 0 if pk == 0 else math.log2(pk)
         negative_ent += pk * log2pk
-    
     return - negative_ent
 
 def gain_continuous(D: TrainingSet, a: Attribute) -> Tuple[float, float]:
     """计算样本 D 在连续值属性 a 上, 采用二分法(bi-partition)的最优划分点t, 并返回基于t的二分信息增益.
     """
     # 将属性 a 在训练集 D 上的所有样本取值转换成list并排序
-    sorted_values = D.samples[a].values.tolist().sort()
+    sorted_values = D.samples[a.name].values.tolist()
+    sorted_values.sort()
 
     # 计算 sorted_values 上每相邻二个点的中位值(候选划分点)集合 Ta
 
@@ -198,10 +197,9 @@ def gain_continuous(D: TrainingSet, a: Attribute) -> Tuple[float, float]:
     for i in range(len(sorted_values) - 1):
         ti = (sorted_values[i] + sorted_values[i + 1])/2
         # 复制一份 D, 将 属性 a 的取值按照 t 做二分, 变成{不大于t(Dt-), 大于t(Dt+)}的二分离散值
-        Dta = TrainingSet(D.samples.copy(), label)
-        for i, row in Dta.samples.iterrows():
-            row[a.name] = ('%.3f' % ti) + ('-' if ti <= row[a.name] else '+')
-
+        Dta = TrainingSet(D.samples.copy(), D.label_name)
+        for j, row in Dta.samples.iterrows():
+            Dta.samples.at[j, a.name] = ('%.3f' % ti) + ('-' if row[a.name] <= ti else '+')
         at = Attribute(a.name, {('%.3f-' % ti), ('%.3f+' % ti)})
         gain_D_a_ti = gain_discrete(Dta, at)
         if gain_D_a_ti > gain:
@@ -377,6 +375,9 @@ def tree_generate(D: TrainingSet, A: set, selet_best_attribute_method, node_leve
 
 def tree_generate_ID3(D: TrainingSet, A: set) -> DecisionTreeNode:
     return tree_generate(D, A, selet_best_attribute_method_ID3)
+def tree_generate_C4dot5(D: TrainingSet, A: set) -> DecisionTreeNode:
+    return tree_generate(D, A, selet_best_attribute_method_C4dot5)
+
 
 if __name__ == '__main__':
     A = {
@@ -386,10 +387,10 @@ if __name__ == '__main__':
             Attribute('纹理', {'清晰', '稍糊', '模糊'}),
             Attribute('脐部', {'凹陷', '稍凹', '平坦'}),
             Attribute('触感', {'硬滑', '软粘'}),
-            Attribute('密度', True),
+            Attribute('密度', is_continuous = True),
             Attribute('含糖率', is_continuous = True)
         }
-    df = pd.read_csv('西瓜数据集 3.0.csv')
+    df = pd.read_csv('chapter_4/西瓜数据集 3.0.csv')
     df.set_index('编号', inplace=True)
     D = TrainingSet(df, '好瓜')
 
@@ -397,6 +398,6 @@ if __name__ == '__main__':
     print(D)
     print('\n输入-属性集 A:')
     print(A)
-    tree = tree_generate_ID3(D, A)
+    tree = tree_generate_C4dot5(D, A)
     print('\n输出-决策树:')
     print(tree)
