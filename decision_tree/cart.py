@@ -1,4 +1,6 @@
 #-*-coding:utf-8-*- 
+import sys
+from typing import Tuple
 from .decision_tree_base import *
 
 def gini(D: TrainingSet) -> float:

@@ -1,4 +1,6 @@
 #-*-coding:utf-8-*- 
+import math
+from typing import Tuple
 from .decision_tree_base import *
 
 def ent(D: TrainingSet) -> float:
@@ -82,7 +84,7 @@ def gain(D: TrainingSet, a: Attribute) -> float:
 
 def select_partition_method_gain(D: TrainingSet, A: set) -> Tuple[Attribute, dict]:
     """基于ID3决策树算法, 用信息增益来进行决策树的最优划分属性选择, 选择属性a* = arg max Gain(D,a), a ∈ A.
-    采用二分法(bi-partition)对连续属性进行处理，源自C4.5决策树算法.
+    采用二分法(bi-partition)对连续属性进行处理, 源自C4.5决策树算法.
     
     Parameters
     ----------

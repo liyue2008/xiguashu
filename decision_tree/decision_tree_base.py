@@ -1,8 +1,5 @@
 #-*-coding:utf-8-*- 
-import math
 from collections import Counter
-import sys
-from typing import Tuple
 import pandas as pd
 
 def all_same(items):
