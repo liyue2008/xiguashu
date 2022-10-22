@@ -36,7 +36,7 @@ def gini_index(D: TrainingSet, a: Attribute) -> float:
     len_of_D = D.len()
     # print('len_of_D: %.3f\n' % len_of_D)
     gini_index = 0
-    for Dv in D.partition_by_attr(a):
+    for Dv in D.partition_by_attr(a).values():
         gini_index += ( Dv.len() / len_of_D ) * gini(Dv)
     return gini_index   
 
@@ -81,11 +81,9 @@ if __name__ == '__main__':
             Attribute('敲声', {'沉闷', '浊响', '清脆'}),
             Attribute('纹理', {'清晰', '稍糊', '模糊'}),
             Attribute('脐部', {'凹陷', '稍凹', '平坦'}),
-            Attribute('触感', {'硬滑', '软粘'}),
-            Attribute('密度', is_continuous = True),
-            Attribute('含糖率', is_continuous = True)
+            Attribute('触感', {'硬滑', '软粘'})
         }
-    df = pd.read_csv('data/西瓜数据集 3.0.csv')
+    df = pd.read_csv('data/西瓜数据集 2.0.csv')
     df.set_index('编号', inplace=True)
     D = TrainingSet(df, '好瓜')
 

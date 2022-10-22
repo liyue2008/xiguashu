@@ -6,7 +6,6 @@ from pathlib import Path
 sys.path[0] = str(Path(sys.path[0]).parent)
 from decision_tree import *
 
-
 class TestDecisionTreeMethods(ut.TestCase):
     def test_all_same(self):
         self.assertTrue(all_same(['好瓜', '好瓜', '好瓜', '好瓜', '好瓜', '好瓜']))
@@ -140,6 +139,17 @@ class TestDecisionTreeMethods(ut.TestCase):
         actrual_gain = gain.gain_discrete(D, a)
         # print(actrual_gain)
         self.assertEqual(expect_gain, round(actrual_gain, 3))
+
+    def test_gini(self):
+        expect_gini = 0.498
+        data_file = 'data/西瓜数据集 2.0.csv'
+        df = pd.read_csv(data_file)
+        df.set_index('编号', inplace=True)
+        D = TrainingSet(df, '好瓜')
+        actrual_gini = cart.gini(D)
+        print('actrual_gini = %d\n' % actrual_gini)
+        self.assertEqual(expect_gini, round(actrual_gini, 3))
+
     
 if __name__ == '__main__':
     ut.main()
