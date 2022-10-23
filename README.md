@@ -70,7 +70,7 @@ decision_tree
 ```bash
 (xiguashu)  ~/workspace/xiguashu $ python3 -m decision_tree.gain   
 输入-数据集 D:
-TrainingSet: label_name=好瓜, samples(17):
+DataSet: label_name=好瓜, samples(17):
     色泽  根蒂  敲声  纹理  脐部  触感     密度    含糖率 好瓜
 编号                                         
 1   青绿  蜷缩  浊响  清晰  凹陷  硬滑  0.697  0.460  是

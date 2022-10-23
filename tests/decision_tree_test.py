@@ -13,7 +13,7 @@ class TestDecisionTreeMethods(ut.TestCase):
     def test_majority_in_list(self):
         self.assertEqual('好瓜', majority_in_list(['好瓜', '好瓜', '好瓜', '好瓜', '好瓜', '好瓜']))
         self.assertEqual('坏瓜', majority_in_list(['好瓜', '坏瓜', '未知', '好瓜', '坏瓜', '坏瓜']))
-    def test_TrainingSet_partition_by_attr(self):
+    def test_DataSet_partition_by_attr(self):
         data = {
             '编号': [1, 2, 3, 4],
             '色泽': ['乌黑', '乌黑', '乌黑', '乌黑'],
@@ -23,24 +23,24 @@ class TestDecisionTreeMethods(ut.TestCase):
         }
         df = pd.DataFrame(data).set_index('编号')
         
-        ts = TrainingSet(df, '好瓜')
+        ts = DataSet(df, '好瓜')
         a = Attribute('根蒂', {'蜷缩', '硬挺', '稍蜷'})
         
 
         expect_data = {
-            '蜷缩': TrainingSet(pd.DataFrame({
+            '蜷缩': DataSet(pd.DataFrame({
                 '编号': [1, 3],
                 '色泽': ['乌黑', '乌黑'],
                 '根蒂': ['蜷缩', '蜷缩'],
                 '敲声': ['沉闷', '沉闷'],
                 '好瓜': ['是', '是']
-            }).set_index('编号'), '好瓜'),'硬挺': TrainingSet(pd.DataFrame({
+            }).set_index('编号'), '好瓜'),'硬挺': DataSet(pd.DataFrame({
                 '编号': [2],
                 '色泽': ['乌黑'],
                 '根蒂': ['硬挺'],
                 '敲声': ['沉闷'],
                 '好瓜': ['是']
-            }).set_index('编号'), '好瓜'),'稍蜷': TrainingSet(pd.DataFrame({
+            }).set_index('编号'), '好瓜'),'稍蜷': DataSet(pd.DataFrame({
                 '编号': [4],
                 '色泽': ['乌黑'],
                 '根蒂': ['稍蜷'],
@@ -52,14 +52,14 @@ class TestDecisionTreeMethods(ut.TestCase):
         sub_ts = ts.partition_by_attr(a)
         self.assertDictEqual(expect_data, sub_ts)
 
-    def test_TrainingSet_bi_partition_by_attr(self):
+    def test_DataSet_bi_partition_by_attr(self):
         data = {
             '编号': [1, 2, 3, 4, 5, 6],
             '密度': [0.697, 0.774, 0.634, 0.403, 0.245,0.36],
             '好瓜': ['是', '是', '是', '否', '否', '否']
         }
         t = 0.403
-        D = TrainingSet(pd.DataFrame(data).set_index('编号'), '好瓜')
+        D = DataSet(pd.DataFrame(data).set_index('编号'), '好瓜')
         
         data_plus = {
             '编号': [1, 2, 3,],
@@ -72,15 +72,15 @@ class TestDecisionTreeMethods(ut.TestCase):
             '好瓜': ['否', '否', '否']
         }
         expected = {
-            ('%.3f-' % t): TrainingSet(pd.DataFrame(data_minus).set_index('编号'), '好瓜'),
-            ('%.3f+' % t): TrainingSet(pd.DataFrame(data_plus).set_index('编号'), '好瓜')
+            ('%.3f-' % t): DataSet(pd.DataFrame(data_minus).set_index('编号'), '好瓜'),
+            ('%.3f+' % t): DataSet(pd.DataFrame(data_plus).set_index('编号'), '好瓜')
         }
         actrual = D.bi_partition_by_attr('密度', t)
         self.assertDictEqual(expected, actrual)
 
         
 
-    def test_TrainingSet_all_samples_same(self):
+    def test_DataSet_all_samples_same(self):
         data = {
         '色泽': ['乌黑', '乌黑', '乌黑', '乌黑'],
         '根蒂': ['蜷缩', '硬挺', '蜷缩', '稍蜷'],
@@ -89,7 +89,7 @@ class TestDecisionTreeMethods(ut.TestCase):
         }
 
         df = pd.DataFrame(data)
-        ts = TrainingSet(df, '好瓜')
+        ts = DataSet(df, '好瓜')
 
         a1 = {
             Attribute('色泽', {'青绿', '乌黑', '浅白'}),
@@ -110,7 +110,7 @@ class TestDecisionTreeMethods(ut.TestCase):
         data_file = 'data/西瓜数据集 2.0.csv'
         df = pd.read_csv(data_file)
         df.set_index('编号', inplace=True)
-        D = TrainingSet(df, '好瓜')
+        D = DataSet(df, '好瓜')
         actrual_ent = gain.ent(D)
         # print('actrual_ent = %d\n' % actrual_ent)
         self.assertEqual(expect_ent, round(actrual_ent, 3))
@@ -119,7 +119,7 @@ class TestDecisionTreeMethods(ut.TestCase):
         data_file = 'data/西瓜数据集 3.0.csv'
         df = pd.read_csv(data_file)
         df.set_index('编号', inplace=True)
-        D = TrainingSet(df, '好瓜')
+        D = DataSet(df, '好瓜')
         a = Attribute('密度', is_continuous=True)
         expected = (0.262, 0.382)
 
@@ -135,7 +135,7 @@ class TestDecisionTreeMethods(ut.TestCase):
         data_file = 'data/西瓜数据集 2.0.csv'
         df = pd.read_csv(data_file)
         df.set_index('编号', inplace=True)
-        D = TrainingSet(df, '好瓜')
+        D = DataSet(df, '好瓜')
         actrual_gain = gain.gain_discrete(D, a)
         # print(actrual_gain)
         self.assertEqual(expect_gain, round(actrual_gain, 3))
@@ -145,7 +145,7 @@ class TestDecisionTreeMethods(ut.TestCase):
         data_file = 'data/西瓜数据集 2.0.csv'
         df = pd.read_csv(data_file)
         df.set_index('编号', inplace=True)
-        D = TrainingSet(df, '好瓜')
+        D = DataSet(df, '好瓜')
         actrual_gini = gini.gini(D)
         print('actrual_gini = %d\n' % actrual_gini)
         self.assertEqual(expect_gini, round(actrual_gini, 3))

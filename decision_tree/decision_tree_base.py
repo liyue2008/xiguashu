@@ -1,5 +1,6 @@
 #-*-coding:utf-8-*- 
 from collections import Counter
+from typing import Any
 import pandas as pd
 
 def all_same(items):
@@ -36,8 +37,8 @@ class Attribute:
 
         
 
-class TrainingSet:
-    """TrainingSet表示一个训练集，包含训练数据集和数据的标记。
+class DataSet:
+    """DataSet表示一个训练集，包含训练数据集和数据的标记。
 
     Attributes
     ----------
@@ -52,7 +53,7 @@ class TrainingSet:
     def __eq__(self, other):
         return (self.label_name == other.label_name and self.samples.equals(other.samples))
     def __str__(self) -> str:
-        return "TrainingSet: label_name=%s, samples(%d):\n%s" % (self.label_name, len(self.samples), self.samples)
+        return "DataSet: label_name=%s, samples(%d):\n%s" % (self.label_name, len(self.samples), self.samples)
     def __repr__(self) -> str:
         return self.__str__()
     def len(self) -> int:
@@ -67,7 +68,7 @@ class TrainingSet:
         """
         ret = {}
         for attr_value in a.values:
-            ret[attr_value] = TrainingSet(self.samples[self.samples[a.name] == attr_value], self.label_name)
+            ret[attr_value] = DataSet(self.samples[self.samples[a.name] == attr_value], self.label_name)
         return ret
     def bi_partition_by_attr(self, attr_name: str, t: float):
         """二分法计算训练集 D 中在属性 attr_name 上,基于最佳划分点t划分的二个子集.
@@ -77,8 +78,8 @@ class TrainingSet:
         返回包含二个元素的Dictionary: {'t-': D在属性a上取值不大于t的子集 D-, 't+': D在属性a上取值大于t的子集 D+).
         """
         return {
-            ('%.3f-' % t): TrainingSet(self.samples[self.samples[attr_name] <= t], self.label_name),
-            ('%.3f+' % t): TrainingSet(self.samples[self.samples[attr_name] > t], self.label_name)
+            ('%.3f-' % t): DataSet(self.samples[self.samples[attr_name] <= t], self.label_name),
+            ('%.3f+' % t): DataSet(self.samples[self.samples[attr_name] > t], self.label_name)
             }
     def all_samples_same(self, A: set) -> bool:
         """训练集D上是否所有样本在属性列表A中所有属性上取值相同
@@ -151,23 +152,76 @@ class DecisionTreeNode:
             for key in self.children:
                 formated_children_dict[key] = self.children[key].dict()
             return {self.classify_name: formated_children_dict}
+    def inference(self, test_set: DataSet) -> DataSet:
+        """用决策树在数据集test_set上推理, 返回带标记的数据集.
+        Parameters
+        ----------
+        test_set: DataSet
+            用于推理的测试数据集.
+        
+        Returns
+        ----------
+        返回带标记的数据集.
+        """
+        ret_set = DataSet(test_set.samples.copy(), test_set.label_name)
+        for index, row in ret_set.samples.iterrows():
+            ret_set.samples.at[index, ret_set.label_name] = self.inference(row)
+        return ret_set
 
-def tree_generate(D: TrainingSet, A: set, select_partition_method, node_level_in_tree: int = 0) -> DecisionTreeNode : 
+    def inference(self, sample: pd.Series) -> str:
+        """用决策树在数据sample上推理, 返回带标记的数据集.
+        Parameters
+        ----------
+        sample: Series
+            用于推理的数据.
+        Returns
+        ----------
+            推理出来的分类标记.
+        """
+        current_node = self
+        
+        while not current_node.is_leaf():
+            classify_value = sample[current_node.classify_name]
+            # 如果找不到会抛出KeyError
+            current_node = current_node.children[classify_value]
+        return current_node.label
+
+    def error_rate(self, validation_set: DataSet) -> float:
+        """用决策树在标记的数据集validation_set上推理并计算错误率.
+        Parameters
+        ----------
+        validation_set: DataSet
+            用于推理的数据集.
+        
+        Returns
+        ----------
+        返回带标记的数据集.
+        """
+        error_count = 0
+        for index, row in validation_set.samples.iterrows():
+            inference_value = self.inference(row)
+            if inference_value != row[validation_set.label_name]:
+                error_count = error_count + 1
+        accuracy = error_count / validation_set.len()
+        return 1 - accuracy
+
+
+def tree_generate(D: DataSet, A: set, select_partition_method, node_level_in_tree: int = 0) -> DecisionTreeNode : 
     """决策树学习基本算法的实现
 
     Parameters
     ----------
-    D : TrainingSet
+    D : DataSet
         训练集 D = {(x1, y1), (x2, y2), ... , (xm, ym)};
     A : set of Attribute
         属性集 A = {a1, a2, ... , ad};
     select_partition_method: method
         这个参数是一个函数, 功能是: 从A中选择最优划分属性a*, 并以最优划分属性对 D 进行分区.
         函数定义:
-        def select_partition_method(D: TrainingSet, A: set) -> Tuple[Attribute, dict]:
+        def select_partition_method(D: DataSet, A: set) -> Tuple[Attribute, dict]:
         Parameters
         ----------
-        D : TrainingSet
+        D : DataSet
             训练集 D = {(x1, y1), (x2, y2), ... , (xm, ym)};
         A : set of Attribute
             属性集 A = {a1, a2, ... , ad};
@@ -247,3 +301,4 @@ def tree_generate(D: TrainingSet, A: set, select_partition_method, node_level_in
         node.children[classify_value] = childNode
             
     return node
+

@@ -3,12 +3,12 @@ import math
 from typing import Tuple
 from .decision_tree_base import *
 
-def ent(D: TrainingSet) -> float:
+def ent(D: DataSet) -> float:
     """计算样本集合 D 的信息熵(information entropy)
     
     Parameters
     ----------
-    D : TrainingSet
+    D : DataSet
         样本集合 D。
 
     Returns
@@ -31,7 +31,7 @@ def ent(D: TrainingSet) -> float:
         negative_ent += pk * log2pk
     return - negative_ent
 
-def gain_continuous(D: TrainingSet, a: Attribute) -> Tuple[float, float]:
+def gain_continuous(D: DataSet, a: Attribute) -> Tuple[float, float]:
     """计算样本 D 在连续值属性 a 上, 采用二分法(bi-partition)的最优划分点t, 并返回基于t的二分信息增益.
     """
     # 将属性 a 在训练集 D 上的所有样本取值转换成list并排序
@@ -45,7 +45,7 @@ def gain_continuous(D: TrainingSet, a: Attribute) -> Tuple[float, float]:
     for i in range(len(sorted_values) - 1):
         ti = (sorted_values[i] + sorted_values[i + 1])/2
         # 复制一份 D, 将 属性 a 的取值按照 t 做二分, 变成{不大于t(Dt-), 大于t(Dt+)}的二分离散值
-        Dta = TrainingSet(D.samples.copy(), D.label_name)
+        Dta = DataSet(D.samples.copy(), D.label_name)
         for j, row in Dta.samples.iterrows():
             Dta.samples.at[j, a.name] = ('%.3f' % ti) + ('-' if row[a.name] <= ti else '+')
         at = Attribute(a.name, {('%.3f-' % ti), ('%.3f+' % ti)})
@@ -56,7 +56,7 @@ def gain_continuous(D: TrainingSet, a: Attribute) -> Tuple[float, float]:
     return (gain, t)   
 
 
-def gain_discrete(D: TrainingSet, a: Attribute) -> float:
+def gain_discrete(D: DataSet, a: Attribute) -> float:
     """计算样本 D 在离散值属性 a 上的信息增益(information entropy).
     """
     # print("Training set:\n%s\n" % D)
@@ -74,7 +74,7 @@ def gain_discrete(D: TrainingSet, a: Attribute) -> float:
     # print('Gain(%s) = %.3f' % (a.name, gain))
     return gain   
 
-def gain(D: TrainingSet, a: Attribute) -> float:
+def gain(D: DataSet, a: Attribute) -> float:
     """计算样本 D 在属性 a 上的信息增益(information entropy).
     """
     if a.is_continuous:
@@ -82,13 +82,13 @@ def gain(D: TrainingSet, a: Attribute) -> float:
     else:
         return gain_discrete(D, a)
 
-def select_partition_method_gain(D: TrainingSet, A: set) -> Tuple[Attribute, dict]:
+def select_partition_method_gain(D: DataSet, A: set) -> Tuple[Attribute, dict]:
     """基于ID3决策树算法, 用信息增益来进行决策树的最优划分属性选择, 选择属性a* = arg max Gain(D,a), a ∈ A.
     采用二分法(bi-partition)对连续属性进行处理, 源自C4.5决策树算法.
     
     Parameters
     ----------
-    D : TrainingSet
+    D : DataSet
         训练集 D = {(x1, y1), (x2, y2), ... , (xm, ym)};
     A : set of Attribute
         属性集 A = {a1, a2, ... , ad};
@@ -126,7 +126,7 @@ def select_partition_method_gain(D: TrainingSet, A: set) -> Tuple[Attribute, dic
         Dv_dict = D.partition_by_attr(classify_attribute)
     return (classify_attribute, Dv_dict)
 
-def tree_generate_gain(D: TrainingSet, A: set) -> DecisionTreeNode:
+def tree_generate_gain(D: DataSet, A: set) -> DecisionTreeNode:
     return tree_generate(D, A, select_partition_method_gain)
 
 if __name__ == '__main__':
@@ -142,7 +142,7 @@ if __name__ == '__main__':
         }
     df = pd.read_csv('data/西瓜数据集 3.0.csv')
     df.set_index('编号', inplace=True)
-    D = TrainingSet(df, '好瓜')
+    D = DataSet(df, '好瓜')
 
     print('输入-数据集 D:')
     print(D)

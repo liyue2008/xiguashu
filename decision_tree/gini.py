@@ -3,12 +3,12 @@ import sys
 from typing import Tuple
 from .decision_tree_base import *
 
-def gini(D: TrainingSet) -> float:
+def gini(D: DataSet) -> float:
     """计算样本集合 D 的基尼值
     
     Parameters
     ----------
-    D : TrainingSet
+    D : DataSet
         样本集合 D。
 
     Returns
@@ -31,7 +31,7 @@ def gini(D: TrainingSet) -> float:
         sum_pk_square += pk_square
     return 1 - sum_pk_square
 
-def gini_index(D: TrainingSet, a: Attribute) -> float:
+def gini_index(D: DataSet, a: Attribute) -> float:
     """计算样本 D 在离散值属性 a 上的信息增益(information entropy).
     """
     # print("Training set:\n%s\n" % D)
@@ -42,12 +42,12 @@ def gini_index(D: TrainingSet, a: Attribute) -> float:
         gini_index += ( Dv.len() / len_of_D ) * gini(Dv)
     return gini_index   
 
-def select_partition_method_gini_index(D: TrainingSet, A: set) -> Tuple[Attribute, dict]:
+def select_partition_method_gini_index(D: DataSet, A: set) -> Tuple[Attribute, dict]:
     """用基尼指数来进行决策树的划分属性选择, 选择属性a* = arg min Gini_index(D,a), a ∈ A.
 
     Parameters
     ----------
-    D : TrainingSet
+    D : DataSet
         训练集 D = {(x1, y1), (x2, y2), ... , (xm, ym)};
     A : set of Attribute
         属性集 A = {a1, a2, ... , ad};
@@ -73,7 +73,7 @@ def select_partition_method_gini_index(D: TrainingSet, A: set) -> Tuple[Attribut
     Dv_dict = D.partition_by_attr(classify_attribute)
     return (classify_attribute, Dv_dict)
 
-def tree_generate_CART(D: TrainingSet, A: set) -> DecisionTreeNode:
+def tree_generate_CART(D: DataSet, A: set) -> DecisionTreeNode:
     return tree_generate(D, A, select_partition_method_gini_index)
 
 if __name__ == '__main__':
@@ -87,7 +87,7 @@ if __name__ == '__main__':
         }
     df = pd.read_csv('data/西瓜数据集 2.0.csv')
     df.set_index('编号', inplace=True)
-    D = TrainingSet(df, '好瓜')
+    D = DataSet(df, '好瓜')
 
     print('输入-数据集 D:')
     print(D)
