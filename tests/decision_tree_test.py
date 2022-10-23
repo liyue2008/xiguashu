@@ -146,7 +146,7 @@ class TestDecisionTreeMethods(ut.TestCase):
         df = pd.read_csv(data_file)
         df.set_index('编号', inplace=True)
         D = TrainingSet(df, '好瓜')
-        actrual_gini = cart.gini(D)
+        actrual_gini = gini.gini(D)
         print('actrual_gini = %d\n' % actrual_gini)
         self.assertEqual(expect_gini, round(actrual_gini, 3))
 
