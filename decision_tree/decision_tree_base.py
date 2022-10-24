@@ -1,6 +1,8 @@
 #-*-coding:utf-8-*- 
 from collections import Counter
+import copy
 from typing import Any
+from typing_extensions import Self
 import pandas as pd
 
 def all_same(items):
@@ -117,6 +119,12 @@ class DecisionTreeNode:
     label : str
         仅当叶子节点时有效, 表示分类标记.
     """
+    def __copy__(self):
+        return DecisionTreeNode(self.is_leaf, self.classify_name, self.children, self.label, self.level)
+
+    def __deepcopy__(self, memo):
+        return DecisionTreeNode(self.is_leaf, copy.deepcopy(self.classify_name, memo), copy.deepcopy(self.children, memo), copy.deepcopy(self.label, memo), self.level)
+
     def __init__(self, is_leaf: bool = False, classify_name: str = '', children: dict = {}, label: str = '', level: int = 0) -> None:
         self.is_leaf = is_leaf
         self.children = children
@@ -199,11 +207,15 @@ class DecisionTreeNode:
         """
         error_count = 0
         for index, row in validation_set.samples.iterrows():
-            inference_value = self.inference(row)
-            if inference_value != row[validation_set.label_name]:
+            prediction_value = self.inference(row)
+            if prediction_value != row[validation_set.label_name]:
                 error_count = error_count + 1
-        accuracy = error_count / validation_set.len()
-        return 1 - accuracy
+        error_rate = error_count / validation_set.len()
+        return error_rate
+    def accuracy(self, validation_set: DataSet) -> float:
+        """用决策树在标记的数据集validation_set上推理并计算精度.
+        """
+        return 1 - self.error_rate(validation_set)
 
 
 def tree_generate(D: DataSet, A: set, select_partition_method, node_level_in_tree: int = 0) -> DecisionTreeNode : 
@@ -254,9 +266,9 @@ def tree_generate(D: DataSet, A: set, select_partition_method, node_level_in_tre
     # 2: if D 中样本全属于同一类别C then
     # 3:   将 node 标记为 C 类叶节点；return；
     # 4: end if
-    labels = D.samples[D.label_name].to_numpy()
-    if (labels[0] == labels).all():
-        C = labels[0]
+    training_set_labels = D.samples[D.label_name].to_numpy()
+    if (training_set_labels[0] == training_set_labels).all():
+        C = training_set_labels[0]
         node.label = C
         node.is_leaf = True
         return node
@@ -267,7 +279,7 @@ def tree_generate(D: DataSet, A: set, select_partition_method, node_level_in_tre
     # 7: end if
     if(len(A) == 0 or D.all_samples_same(A)):
         node.is_leaf = True
-        node.label = majority_in_list(D.labels)
+        node.label = majority_in_list(majority_in_list(D.samples[D.label_name].to_list()))
         return node
     
     #8: 从A中选择最优划分属性a*(classify_attribute), 并以最优划分属性对 D 进行分区.
