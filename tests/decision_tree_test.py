@@ -3,6 +3,8 @@ import unittest as ut
 import pandas as pd
 import sys
 from pathlib import Path
+
+from decision_tree import gain, gini, pruning
 sys.path[0] = str(Path(sys.path[0]).parent)
 from decision_tree import *
 
@@ -125,7 +127,7 @@ class TestDecisionTreeMethods(ut.TestCase):
 
         actrual = gain.gain_continuous(D, a)
         actrual_round = (round(actrual[0], 3), round(actrual[1], 3))
-        print(actrual)
+        # print(actrual)
         self.assertTupleEqual(expected, actrual_round)
 
 
@@ -147,9 +149,38 @@ class TestDecisionTreeMethods(ut.TestCase):
         df.set_index('编号', inplace=True)
         D = DataSet(df, '好瓜')
         actrual_gini = gini.gini(D)
-        print('actrual_gini = %d\n' % actrual_gini)
+        # print('actrual_gini = %d\n' % actrual_gini)
         self.assertEqual(expect_gini, round(actrual_gini, 3))
+    
+    def test_DecisionTreeNode_accuracy(self):
+        """用例取自<机器学习>P84 图 4.6
+        """
+        test_df = pd.read_csv('data/西瓜数据集 2.0 验证集.csv').set_index('编号')
+        test_data_set = DataSet(test_df, '好瓜')
+        node = DecisionTreeNode(is_leaf=True, label='是')
+        expect_accuracy = 0.429
+        actrual_accuracy = node.accuracy(test_data_set)
+        self.assertEqual(expect_accuracy, round(actrual_accuracy, 3))
 
+        node = DecisionTreeNode(False, '脐部', {
+            '凹陷': DecisionTreeNode(is_leaf=True, label='是'),
+            '稍凹': DecisionTreeNode(is_leaf=True, label='是'),
+            '平坦': DecisionTreeNode(is_leaf=True, label='否')
+        })
+        expect_accuracy = 0.714
+        actrual_accuracy = node.accuracy(test_data_set)
+        self.assertEqual(expect_accuracy, round(actrual_accuracy, 3))
+
+
+    def test_is_prepruning(self):
+        training_df = pd.read_csv('data/西瓜数据集 2.0 训练集.csv').set_index('编号')
+        training_data_set = DataSet(training_df, '好瓜')
+        test_df = pd.read_csv('data/西瓜数据集 2.0 验证集.csv').set_index('编号')
+        test_data_set = DataSet(test_df, '好瓜')
+        node = DecisionTreeNode(classify_name='脐部')
+        
+        actrual = pruning.is_prepruning(node, training_data_set, test_data_set, 0, training_data_set.partition_by_attr(Attribute('脐部', {'凹陷', '稍凹', '平坦'})))
+        self.assertFalse(actrual)
     
 if __name__ == '__main__':
     ut.main()

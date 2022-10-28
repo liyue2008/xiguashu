@@ -85,7 +85,7 @@ if __name__ == '__main__':
             Attribute('脐部', {'凹陷', '稍凹', '平坦'}),
             Attribute('触感', {'硬滑', '软粘'})
         }
-    df = pd.read_csv('data/西瓜数据集 2.0.csv')
+    df = pd.read_csv('data/西瓜数据集 2.0 训练集.csv')
     df.set_index('编号', inplace=True)
     D = DataSet(df, '好瓜')
 
@@ -96,3 +96,10 @@ if __name__ == '__main__':
     tree = tree_generate_CART(D, A)
     print('\n输出-决策树:')
     print(tree)
+    
+    print('==========')
+    test_df = pd.read_csv('data/西瓜数据集 2.0 验证集.csv').set_index('编号')
+    test_data_set = DataSet(test_df, '好瓜')
+    accuracy = tree.accuracy(test_data_set)
+    print('决策树在如下验证集上的精度: %.3f' % accuracy)
+    print(test_data_set)

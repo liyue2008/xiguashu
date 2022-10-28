@@ -117,7 +117,7 @@ def select_partition_method_gain(D: DataSet, A: set) -> Tuple[Attribute, dict]:
         if gain_a > classify_attribute_gain:
             classify_attribute_gain = gain_a
             classify_attribute = a
-            classify_attribute_t = t    
+            classify_attribute_t = t 
     # Dv表示 D 中在 a* 上取值为 av* 的样本子集, Dv_dict 是所有Dv的集合.
     # key为最优划分属性的取值av*(classify_value), value为 Dv
     if classify_attribute.is_continuous:

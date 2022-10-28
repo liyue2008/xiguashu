@@ -1,5 +1,64 @@
 #-*-coding:utf-8-*- 
 from .decision_tree_base import *
+from .gini import select_partition_method_gini_index
+
+def is_prepruning(node: DecisionTreeNode, training_set: DataSet, test_set: DataSet, node_level_in_tree, Dv_dict: dict) -> float:
+    """基于精度判断是否需要预剪枝.
+
+    Parameters
+    ----------
+    node: DecisionTreeNode
+        当前决策树节点.
+    training_set : DataSet
+        训练集 D = {(x1, y1), (x2, y2), ... , (xm, ym)};
+    test_set : DataSet
+        测试集;
+    node_level_in_tree: int
+        节点在树中的层级, 根节点取值为0. 
+        只用于绘制或打印树时布局节点.
+    Dv_dict: dict
+        Dv表示 D 中在 a* 上取值为 av* 的样本子集, Dv_dict 是所有Dv的集合.
+        key: str 
+            最优划分属性的取值av*.
+        value: DataSet
+            Dv表示 D 中在 a* 上取值为 av* 的样本子集.
+    Returns
+    -------
+    是否预剪枝, true: 禁止划分(剪枝), false: 划分(不剪枝)。
+    """
+
+    # 构造划分前的决策树
+    before = copy.deepcopy(node)
+    before.is_leaf = True
+    before.label = majority_in_list(training_set.samples[training_set.label_name].to_list())
+
+
+    # 构造划分后的决策树
+    after = copy.deepcopy(node)
+    for classify_value in Dv_dict:
+
+        Dv = Dv_dict[classify_value]
+        childNode = DecisionTreeNode(level = node_level_in_tree + 1)
+
+        training_set_labels = training_set.samples[training_set.label_name].to_numpy()
+        if Dv.len() == 0:
+            childNode.label = majority_in_list(training_data_set.samples[Dv.label_name].to_list())
+        elif training_set_labels[0] == training_set_labels.all():
+            childNode.label = training_set_labels[0]
+        else:
+            childNode.label = majority_in_list(Dv.samples[Dv.label_name].to_list())
+        childNode.is_leaf = True
+        
+        after.children[classify_value] = childNode
+
+    # 在测试集上计算划分前和划分后的精度
+    accuracy_before = before.accuracy(test_set)
+    accuracy_after = after.accuracy(test_set)
+    # print('分类属性: %s' % node.classify_name)
+    # print('before: acc = %.3f, tree:\n%s' % (accuracy_before, str(before)))
+    # print('after: acc = %.3f, tree:\n%s\n' % (accuracy_after, str(after)))
+    # 决策是否预剪枝
+    return  accuracy_before >= accuracy_after
 
 def tree_generate_prepruning(training_set: DataSet, test_set: DataSet, A: set, select_partition_method, node_level_in_tree: int = 0) -> DecisionTreeNode : 
     """带预剪枝的决策树算法实现
@@ -31,7 +90,7 @@ def tree_generate_prepruning(training_set: DataSet, test_set: DataSet, A: set, s
             Dv表示 D 中在 a* 上取值为 av* 的样本子集, Dv_dict 是所有Dv的集合.
             key: str 
                 最优划分属性的取值av*.
-            value: TrainSet
+            value: DataSet
                 Dv表示 D 中在 a* 上取值为 av* 的样本子集.
     node_level_in_tree: int
         节点在树中的层级, 根节点取值为0. 
@@ -72,6 +131,9 @@ def tree_generate_prepruning(training_set: DataSet, test_set: DataSet, A: set, s
     # key为最优划分属性的取值av*(classify_value), value为 Dv
     (classify_attribute, Dv_dict) = select_partition_method(training_set, A)
     node.classify_name = classify_attribute.name
+    
+    # 决策是否预剪枝
+    prepruning =  is_prepruning(node, training_set, test_set, node_level_in_tree, Dv_dict)
 
     # 9: for a* 的每一个值 av* do
     # 10:   为 node 生成一个分支；另Dv表示 D 中在 a* 上取值为 av* 的样本子集；
@@ -82,30 +144,11 @@ def tree_generate_prepruning(training_set: DataSet, test_set: DataSet, A: set, s
     # 15:   end if
     # 16:end for
 
-    # 构造划分前的决策树
-    before = copy.deepcopy(node)
-    before.is_leaf = True
-    before.label = majority_in_list(majority_in_list(training_set.samples[training_set.label_name].to_list()))
-
-    # 构造划分后的决策树
-    after = copy.deepcopy(node)
-    for classify_value in Dv_dict:
-        Dv = Dv_dict[classify_value]
-        childNode = DecisionTreeNode(level = node_level_in_tree + 1)
-        childNode.is_leaf = True
-        childNode.label = majority_in_list(training_set.samples[training_set.label_name].to_list())
-        after.children[classify_value] = childNode
-
-    # 在测试集上计算划分前和划分后的精度
-    accuracy_before = before.accuracy(test_set)
-    accuracy_after = after.accuracy(test_set)
-    # 决策是否预剪枝
-    is_prepruning =  accuracy_before > accuracy_after
-
-    if is_prepruning:
+    if prepruning:
         node.is_leaf = True
         node.label = majority_in_list(training_set.samples[training_set.label_name].to_list())
     else:
+        test_set_dict = test_set.partition_by_attr(classify_attribute)
         for classify_value in Dv_dict:
             Dv = Dv_dict[classify_value]
             if Dv.samples.empty:
@@ -115,8 +158,44 @@ def tree_generate_prepruning(training_set: DataSet, test_set: DataSet, A: set, s
             else:
                 sub_a = A.copy()
                 sub_a.remove(classify_attribute)
-                # print('%s=%s:' % (classify_attribute, classify_value))
-                childNode = tree_generate_prepruning(Dv, test_set, sub_a, select_partition_method, node_level_in_tree + 1)
+                # print('%s=%s:' % (classify_attribute.name, classify_value))
+                # print('训练集: ', Dv)
+                # print('测试集: ', test_set_dict[classify_value]) 
+                childNode = tree_generate_prepruning(Dv, test_set_dict[classify_value], sub_a, select_partition_method, node_level_in_tree + 1)
             node.children[classify_value] = childNode
             
     return node
+
+def tree_generate_gain_prepruning(training_set: DataSet, test_set: DataSet, A: set) -> DecisionTreeNode:
+    return tree_generate_prepruning(training_set, test_set, A, select_partition_method_gini_index)
+
+if __name__ == '__main__':
+    A = {
+            Attribute('色泽', {'青绿', '乌黑', '浅白'}),
+            Attribute('根蒂', {'稍蜷', '蜷缩', '硬挺'}),
+            Attribute('敲声', {'沉闷', '浊响', '清脆'}),
+            Attribute('纹理', {'清晰', '稍糊', '模糊'}),
+            Attribute('脐部', {'凹陷', '稍凹', '平坦'}),
+            Attribute('触感', {'硬滑', '软粘'})
+        }
+    training_df = pd.read_csv('data/西瓜数据集 2.0 训练集.csv').set_index('编号')
+    training_data_set = DataSet(training_df, '好瓜')
+    test_df = pd.read_csv('data/西瓜数据集 2.0 验证集.csv').set_index('编号')
+    test_data_set = DataSet(test_df, '好瓜')
+
+    print('输入-训练集:')
+    print(training_data_set)
+    print('输入-验证集:')
+    print(test_data_set)
+    print('\n输入-属性集 A:')
+    print(A)
+    tree = tree_generate_gain_prepruning(training_data_set, test_data_set, A)
+    print('\n输出-决策树:')
+    
+    print(tree)
+    print('==========')
+    test_df = pd.read_csv('data/西瓜数据集 2.0 验证集.csv').set_index('编号')
+    test_data_set = DataSet(test_df, '好瓜')
+    accuracy = tree.accuracy(test_data_set)
+    print('决策树在如下验证集上的精度: %.3f' % accuracy)
+    print(test_data_set)

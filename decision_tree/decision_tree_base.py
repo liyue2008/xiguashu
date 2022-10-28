@@ -188,7 +188,7 @@ class DecisionTreeNode:
         """
         current_node = self
         
-        while not current_node.is_leaf():
+        while not current_node.is_leaf:
             classify_value = sample[current_node.classify_name]
             # 如果找不到会抛出KeyError
             current_node = current_node.children[classify_value]
