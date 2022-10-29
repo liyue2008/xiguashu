@@ -74,6 +74,10 @@ def is_postpruning(node: DecisionTreeNode, test_set: DataSet) -> bool:
     是否剪枝, true: 禁止划分(剪枝), false: 划分(不剪枝)。
     """
 
+    # 如果测试集为空，无法验证，不进行剪枝
+    if test_set.len() == 0:
+        return False
+
     # 构造剪枝后的决策树
     postpruning_node = copy.deepcopy(node)
     postpruning_node.is_leaf = True
@@ -232,8 +236,8 @@ def postpruning(node: DecisionTreeNode, test_set: DataSet) -> DecisionTreeNode:
 def tree_generate_gini_prepruning(training_set: DataSet, test_set: DataSet, A: set) -> DecisionTreeNode:
     return tree_generate_prepruning(training_set, test_set, A, select_partition_method_gini_index)
 
-def tree_generate_gini_postpruning(training_set: DataSet, test_set: DataSet) -> DecisionTreeNode:   
-    tree = tree_generate(training_set, test_set, A, select_partition_method_gini_index)
+def tree_generate_gini_postpruning(training_set: DataSet, test_set: DataSet, A: set) -> DecisionTreeNode:   
+    tree = tree_generate(training_set, A, select_partition_method_gini_index)
     tree_postpruning = postpruning(tree, test_set)
     return tree_postpruning
 
@@ -301,4 +305,6 @@ def postpruning_main():
 
 
 if __name__ == '__main__':
+    
     prepruning_main()
+    postpruning_main()
