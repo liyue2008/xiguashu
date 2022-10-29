@@ -277,9 +277,9 @@ def tree_generate(D: DataSet, A: set, select_partition_method, node_level_in_tre
     # 5: if A = 空 OR D中样本在A上取值相同 then
     # 6:    将 node 标记为叶子节点，其类别标记为D中样本最多的类; return
     # 7: end if
+    node.label = majority_in_list(D.samples[D.label_name].to_list())
     if(len(A) == 0 or D.all_samples_same(A)):
         node.is_leaf = True
-        node.label = majority_in_list(majority_in_list(D.samples[D.label_name].to_list()))
         return node
     
     #8: 从A中选择最优划分属性a*(classify_attribute), 并以最优划分属性对 D 进行分区.
