@@ -224,7 +224,7 @@ def postpruning(node: DecisionTreeNode, test_set: DataSet) -> DecisionTreeNode:
         if not child_node.is_leaf:
             child_test_set = DataSet(test_set.samples[test_set.samples[node.classify_name] == attr_value], test_set.label_name)
             # 先对子节点进行后剪枝, 即自底向上剪枝
-            child_node = postpruning(child_node, child_test_set)
+            node.children[attr_value] = postpruning(child_node, child_test_set)
     # 判断是否需要后剪枝
     if is_postpruning(node, test_set):
         return DecisionTreeNode(is_leaf = True, label = node.label, level = node.level)
