@@ -73,7 +73,7 @@ def select_partition_method_gini_index(D: DataSet, A: set) -> Tuple[Attribute, d
     Dv_dict = D.partition_by_attr(classify_attribute)
     return (classify_attribute, Dv_dict)
 
-def tree_generate_CART(D: DataSet, A: set) -> DecisionTreeNode:
+def tree_generate_gini(D: DataSet, A: set) -> DecisionTreeNode:
     return tree_generate(D, A, select_partition_method_gini_index)
 
 if __name__ == '__main__':
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     print(D)
     print('\n输入-属性集 A:')
     print(A)
-    tree = tree_generate_CART(D, A)
+    tree = tree_generate_gini(D, A)
     print('\n输出-决策树:')
     print(tree)
     

@@ -1,6 +1,6 @@
 #-*-coding:utf-8-*- 
 from .decision_tree_base import *
-from .gini import select_partition_method_gini_index
+from .gini import select_partition_method_gini_index, tree_generate_gini
 
 def is_prepruning(node: DecisionTreeNode, training_set: DataSet, test_set: DataSet, node_level_in_tree, Dv_dict: dict) -> bool:
     """基于精度判断是否需要预剪枝.
@@ -236,12 +236,7 @@ def postpruning(node: DecisionTreeNode, test_set: DataSet) -> DecisionTreeNode:
 def tree_generate_gini_prepruning(training_set: DataSet, test_set: DataSet, A: set) -> DecisionTreeNode:
     return tree_generate_prepruning(training_set, test_set, A, select_partition_method_gini_index)
 
-def tree_generate_gini_postpruning(training_set: DataSet, test_set: DataSet, A: set) -> DecisionTreeNode:   
-    tree = tree_generate(training_set, A, select_partition_method_gini_index)
-    tree_postpruning = postpruning(tree, test_set)
-    return tree_postpruning
-
-def prepruning_main():
+def main():
     A = {
             Attribute('色泽', {'青绿', '乌黑', '浅白'}),
             Attribute('根蒂', {'稍蜷', '蜷缩', '硬挺'}),
@@ -257,54 +252,28 @@ def prepruning_main():
 
     print('输入-训练集:')
     print(training_data_set)
-    print('输入-验证集:')
+    print('\n输入-验证集:')
     print(test_data_set)
     print('\n输入-属性集 A:')
     print(A)
-    tree = tree_generate_gini_prepruning(training_data_set, test_data_set, A)
-    print('\n输出-决策树:')
     
+    tree = tree_generate_gini(training_data_set, A)
+    accuracy = tree.accuracy(test_data_set)
+    print('\n输出-未剪枝的决策树，精度 = %.1f%%.' % (accuracy * 100))
     print(tree)
     print('==========')
-    test_df = pd.read_csv('data/西瓜数据集 2.0 验证集.csv').set_index('编号')
-    test_data_set = DataSet(test_df, '好瓜')
-    accuracy = tree.accuracy(test_data_set)
-    print('决策树在如下验证集上的精度: %.3f' % accuracy)
-    print(test_data_set)
 
-def postpruning_main():
-    A = {
-            Attribute('色泽', {'青绿', '乌黑', '浅白'}),
-            Attribute('根蒂', {'稍蜷', '蜷缩', '硬挺'}),
-            Attribute('敲声', {'沉闷', '浊响', '清脆'}),
-            Attribute('纹理', {'清晰', '稍糊', '模糊'}),
-            Attribute('脐部', {'凹陷', '稍凹', '平坦'}),
-            Attribute('触感', {'硬滑', '软粘'})
-        }
-    training_df = pd.read_csv('data/西瓜数据集 2.0 训练集.csv').set_index('编号')
-    training_data_set = DataSet(training_df, '好瓜')
-    test_df = pd.read_csv('data/西瓜数据集 2.0 验证集.csv').set_index('编号')
-    test_data_set = DataSet(test_df, '好瓜')
 
-    print('输入-训练集:')
-    print(training_data_set)
-    print('输入-验证集:')
-    print(test_data_set)
-    print('\n输入-属性集 A:')
-    print(A)
-    tree = tree_generate_gini_postpruning(training_data_set, test_data_set, A)
-    print('\n输出-决策树:')
-    
-    print(tree)
+    tree_prepruning = tree_generate_gini_prepruning(training_data_set, test_data_set, A)
+    accuracy = tree_prepruning.accuracy(test_data_set)
+    print('\n输出-预剪枝的决策树，精度 = %.1f%%.' % (accuracy * 100))
+    print(tree_prepruning)
     print('==========')
-    test_df = pd.read_csv('data/西瓜数据集 2.0 验证集.csv').set_index('编号')
-    test_data_set = DataSet(test_df, '好瓜')
-    accuracy = tree.accuracy(test_data_set)
-    print('决策树在如下验证集上的精度: %.3f' % accuracy)
-    print(test_data_set)
 
+    tree_postpruning = postpruning(tree, test_data_set)
+    accuracy = tree_postpruning.accuracy(test_data_set)
+    print('\n输出-后剪枝的决策树，精度 = %.1f%%.' % (accuracy * 100))
+    print(tree_postpruning)
 
 if __name__ == '__main__':
-    
-    prepruning_main()
-    postpruning_main()
+    main()
