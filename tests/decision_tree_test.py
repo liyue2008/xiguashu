@@ -3,10 +3,9 @@ import unittest as ut
 import pandas as pd
 import sys
 from pathlib import Path
-
-from decision_tree import gain, gini, pruning
 sys.path[0] = str(Path(sys.path[0]).parent)
 from decision_tree import *
+from decision_tree import gain, gini, pruning
 
 class TestDecisionTreeMethods(ut.TestCase):
     def test_all_same(self):
