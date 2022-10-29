@@ -194,7 +194,7 @@ class DecisionTreeNode:
             current_node = current_node.children[classify_value]
         return current_node.label
 
-    def error_rate(self, validation_set: DataSet) -> float:
+    def error_rate(self, test_set: DataSet) -> float:
         """用决策树在标记的数据集validation_set上推理并计算错误率.
         Parameters
         ----------
@@ -206,11 +206,11 @@ class DecisionTreeNode:
         返回带标记的数据集.
         """
         error_count = 0
-        for index, row in validation_set.samples.iterrows():
+        for index, row in test_set.samples.iterrows():
             prediction_value = self.inference(row)
-            if prediction_value != row[validation_set.label_name]:
+            if prediction_value != row[test_set.label_name]:
                 error_count = error_count + 1
-        error_rate = error_count / validation_set.len()
+        error_rate = error_count / test_set.len()
         return error_rate
     def accuracy(self, validation_set: DataSet) -> float:
         """用决策树在标记的数据集validation_set上推理并计算精度.
