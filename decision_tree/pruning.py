@@ -38,7 +38,7 @@ def is_prepruning(node: DecisionTreeNode, training_set: DataSet, test_set: DataS
     for classify_value in Dv_dict:
 
         Dv = Dv_dict[classify_value]
-        childNode = DecisionTreeNode(level = node_level_in_tree + 1)
+        childNode = DecisionTreeNode(depth = node_level_in_tree + 1)
 
         training_set_labels = training_set.samples[training_set.label_name].to_numpy()
         if Dv.len() == 0:
@@ -139,7 +139,7 @@ def tree_generate_prepruning(training_set: DataSet, test_set: DataSet, A: set, s
 
     # print(node_level_in_tree, D, A)
     # 1: 生成节点node
-    node = DecisionTreeNode(level= node_level_in_tree, children= {})
+    node = DecisionTreeNode(depth= node_level_in_tree, children= {})
     # (1)当前结点包含的样本全属于同一类别，无需划分;
     # 2: if D 中样本全属于同一类别C then
     # 3:   将 node 标记为 C 类叶节点；return；
@@ -187,7 +187,7 @@ def tree_generate_prepruning(training_set: DataSet, test_set: DataSet, A: set, s
         for classify_value in Dv_dict:
             Dv = Dv_dict[classify_value]
             if Dv.samples.empty:
-                childNode = DecisionTreeNode(level = node_level_in_tree + 1)
+                childNode = DecisionTreeNode(depth = node_level_in_tree + 1)
                 childNode.is_leaf = True
                 childNode.label = majority_in_list(training_set.samples[training_set.label_name].to_list())
             else:
@@ -227,7 +227,7 @@ def postpruning(node: DecisionTreeNode, test_set: DataSet) -> DecisionTreeNode:
             node.children[attr_value] = postpruning(child_node, child_test_set)
     # 判断是否需要后剪枝
     if is_postpruning(node, test_set):
-        return DecisionTreeNode(is_leaf = True, label = node.label, level = node.level)
+        return DecisionTreeNode(is_leaf = True, label = node.label, depth = node.depth)
     else:
         return node
 

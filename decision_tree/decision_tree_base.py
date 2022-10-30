@@ -1,8 +1,6 @@
 #-*-coding:utf-8-*- 
 from collections import Counter
 import copy
-from typing import Any
-from typing_extensions import Self
 import pandas as pd
 
 def all_same(items):
@@ -118,19 +116,21 @@ class DecisionTreeNode:
         仅当非叶子节点时有效, 表示全部子节点.
     label : str
         仅当叶子节点时有效, 表示分类标记.
+    depth: int
+        节点在树上的深度.
     """
     def __copy__(self):
-        return DecisionTreeNode(self.is_leaf, self.classify_name, self.children, self.label, self.level)
+        return DecisionTreeNode(self.is_leaf, self.classify_name, self.children, self.label, self.depth)
 
     def __deepcopy__(self, memo):
-        return DecisionTreeNode(self.is_leaf, copy.deepcopy(self.classify_name, memo), copy.deepcopy(self.children, memo), copy.deepcopy(self.label, memo), self.level)
+        return DecisionTreeNode(self.is_leaf, copy.deepcopy(self.classify_name, memo), copy.deepcopy(self.children, memo), copy.deepcopy(self.label, memo), self.depth)
 
-    def __init__(self, is_leaf: bool = False, classify_name: str = '', children: dict = {}, label: str = '', level: int = 0) -> None:
+    def __init__(self, is_leaf: bool = False, classify_name: str = '', children: dict = {}, label: str = '', depth: int = 0) -> None:
         self.is_leaf = is_leaf
         self.children = children
         self.classify_name = classify_name
         self.label = label
-        self.level = level
+        self.depth = depth
     def __str__(self) -> str:
         summary = ''
         # print(indent + summary)
@@ -141,7 +141,7 @@ class DecisionTreeNode:
             children_str += ', children(%d):' % len(self.children)
             for c in self.children:
                 indent = ''
-                for x in range(self.level):
+                for x in range(self.depth):
                     indent += '  '
                 indent += '|--'
                 children_str += '\n' + indent + '%s=%s: ' % (self.classify_name, c) + str(self.children[c])
@@ -261,7 +261,7 @@ def tree_generate(D: DataSet, A: set, select_partition_method, node_level_in_tre
     # print(node_level_in_tree, D, A)
     # TODO: 检查训练集D是否为空。
     # 1: 生成节点node
-    node = DecisionTreeNode(level= node_level_in_tree, children= {})
+    node = DecisionTreeNode(depth= node_level_in_tree, children= {})
     # (1)当前结点包含的样本全属于同一类别，无需划分;
     # 2: if D 中样本全属于同一类别C then
     # 3:   将 node 标记为 C 类叶节点；return；
@@ -302,7 +302,7 @@ def tree_generate(D: DataSet, A: set, select_partition_method, node_level_in_tre
     for classify_value in Dv_dict:
         Dv = Dv_dict[classify_value]
         if Dv.samples.empty:
-            childNode = DecisionTreeNode(level = node_level_in_tree + 1)
+            childNode = DecisionTreeNode(depth = node_level_in_tree + 1)
             childNode.is_leaf = True
             childNode.label = majority_in_list(D.samples[D.label_name].to_list())
         else:
