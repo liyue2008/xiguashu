@@ -1,9 +1,9 @@
 #-*-coding:utf-8-*- 
 from .decision_tree_base import *
 from .gain import select_partition_method_gain
-import queue
+from collections import deque
 
-class TreeGenerateQueueItem:
+class TreeGenerateStackItem:
     def __init__(self, node: DecisionTreeNode, training_set: DataSet, attributes: set) -> None:
         """用于生成决策树过程中,保持生成中的子节点 node, 及其对应的训练集 training_set 和属性集 attributes
         """
@@ -11,8 +11,8 @@ class TreeGenerateQueueItem:
         self.training_set = training_set
         self.attributes = attributes
 
-def tree_generate_queue(training_set: DataSet, attributes: set, select_partition_method, max_node: int = 0) -> DecisionTreeNode : 
-    """使用队列实现的决策树学习基本算法
+def tree_generate_stack(training_set: DataSet, attributes: set, select_partition_method, max_depth: int = 0) -> DecisionTreeNode : 
+    """使用栈实现的决策树学习基本算法
 
     Parameters
     ----------
@@ -41,25 +41,24 @@ def tree_generate_queue(training_set: DataSet, attributes: set, select_partition
                 最优划分属性的取值av*.
             value: TrainSet
                 Dv表示 D 中在 a* 上取值为 av* 的样本子集.
-    max_node: int
-        参数max_node控制树的最大节点数 
+    max_depth: int
+        参数max_depth控制树的最大深度 
     Returns
     -------
     node: DecisionTreeNode
         以node为根节点的一棵决策树。
     """
     
-    node_queue = queue.Queue()
+    node_stack = deque()
     tree = DecisionTreeNode(children= {})
-    node_queue.put(TreeGenerateQueueItem(tree, training_set, attributes))
-    node_count = 1 # 树的节点数
-    # 广度遍历优先, 逐层生成树节点.
+    node_stack.append(TreeGenerateStackItem(tree, training_set, attributes))
+    # 深度遍历优先.
     # 先将根节点入队.
     # 依次从队中取出节点处理, 知道队列为空则处理完成
     #   判断当前节点是否有子节点, 如果有, 则将这些子节点入队
-    while not node_queue.empty():
+    while len(node_stack) > 0:
         # 1: 生成节点node
-        item = node_queue.get()
+        item = node_stack.pop()
         node = item.node
         D = item.training_set
         A = item.attributes
@@ -79,7 +78,7 @@ def tree_generate_queue(training_set: DataSet, attributes: set, select_partition
         # 6:    将 node 标记为叶子节点，其类别标记为D中样本最多的类; return
         # 7: end if
         node.label = majority_in_list(D.samples[D.label_name].to_list())
-        if len(A) == 0 or D.all_samples_same(A):
+        if len(A) == 0 or D.all_samples_same(A) or (max_depth > 0 and node.depth + 1 >= max_depth): 
             node.is_leaf = True
             continue
         
@@ -90,11 +89,6 @@ def tree_generate_queue(training_set: DataSet, attributes: set, select_partition
         (classify_attribute, Dv_dict) = select_partition_method(D, A)
         node.classify_name = classify_attribute.name
 
-        # 如果设置了最大节点数，并且[树的节点数 + 当前节点的子节点数]超过最大节点数，那么就只能剪枝。
-        if max_node > 0 and node_count + len(Dv_dict) > max_node:
-            node.is_leaf = True
-            continue
-
         # 9: for a* 的每一个值 av* do
         # 10:   为 node 生成一个分支；另Dv表示 D 中在 a* 上取值为 av* 的样本子集；
         # 11:   if Dv 为空 then   
@@ -103,6 +97,9 @@ def tree_generate_queue(training_set: DataSet, attributes: set, select_partition
         # 14:       以 tree_generate(Dv, A\{a*}) 为分支节点
         # 15:   end if
         # 16:end for
+
+        
+
 
         for classify_value in Dv_dict:
             Dv = Dv_dict[classify_value]
@@ -113,16 +110,15 @@ def tree_generate_queue(training_set: DataSet, attributes: set, select_partition
             else:
                 sub_a = A.copy()
                 sub_a.remove(classify_attribute)
-                node_queue.put(TreeGenerateQueueItem(childNode, Dv, sub_a))
-            node.children[classify_value] = childNode
-            node_count += 1
+                node_stack.append(TreeGenerateStackItem(childNode, Dv, sub_a))
+            node.children[classify_value] = childNode 
     return tree
 
-def tree_generate_gain(D: DataSet, A: set, max_node: int) -> DecisionTreeNode:
-    return tree_generate_queue(D, A, select_partition_method_gain, max_node)
+def tree_generate_gain(D: DataSet, A: set, max_depth: int) -> DecisionTreeNode:
+    return tree_generate_stack(D, A, select_partition_method_gain, max_depth)
 
 if __name__ == '__main__':
-    max_node = 4
+    max_depth = 2
     A = {
             Attribute('色泽', {'青绿', '乌黑', '浅白'}),
             Attribute('根蒂', {'稍蜷', '蜷缩', '硬挺'}),
@@ -141,8 +137,7 @@ if __name__ == '__main__':
     print(D)
     print('\n输入-属性集 A:')
     print(A)
-    print('输入-最大节点数：%d.' % max_node)
-
-    tree = tree_generate_gain(D, A, max_node)
+    print('输入-最大深度：%d.' % max_depth)
+    tree = tree_generate_gain(D, A, max_depth)
     print('\n输出-决策树:')
     print(tree)
