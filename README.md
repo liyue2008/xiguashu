@@ -58,9 +58,12 @@ OK
 (xiguashu)  ~/temp/xiguashu $ tree decision_tree
 decision_tree
 ├── __init__.py
-├── decision_tree_base.py # 决策树学习基本算法的实现, 对应书中P74 图 4.2
+├── decision_tree_base.py # 决策树生成基本算法的实现, 对应书中P74 图 4.2
+├── decision_tree_queue.py # 习题4.8：使用队列实现的决策树生成算法，广度搜索优先，支持限制树的最大节点数。
+├── decision_tree_stack.py # 习题4.7：使用栈实现的决策树生成算法，深度搜索优先，支持限制树的最大深度。
 ├── gain.py # 对应习题4.3, 用信息增益来进行决策树的最优划分属性选择, 采用二分法(bi-partition)对连续属性进行处理的决策树生成算法实现.
-└── gini.py # 用基尼指数来进行决策树的划分属性选择的决策树生成算法实现.
+├── gini.py # 习题4.4 采用基尼指数进行划分选择的基本决策树算法，不支持剪枝。
+└── pruning.py # 习题4.4 采用基尼指数进行划分选择的决策树算法，支持预剪枝和后剪枝。
 ```
 
 ### 4.3 试编程实现基于信息嫡进行划分选择的决策树算法，并为表4.3中数据生成一棵决策树.  
@@ -110,7 +113,7 @@ Classify(分类属性): 纹理, children(3):
 使用基尼指数进行划分选择, 依次生成三棵决策树：未剪枝、预剪枝和后剪枝，并计算这三棵树在验证集上的精度。
 
 ```bash
-(xiguashu)  ~/workspace/xiguashu   main ±  python3 -m decision_tree.pruning
+(xiguashu)  ~/workspace/xiguashu $ python3 -m decision_tree.pruning
 输入-训练集:
 DataSet: label_name=好瓜, samples(10):
     色泽  根蒂  敲声  纹理  脐部  触感 好瓜
