@@ -1,12 +1,47 @@
 #-*-coding:utf-8-*- 
 import math
+import pandas as pd
 from collections.abc import Callable
-
+from decision_tree import DataSet
 import numpy as np
 
 
 def sigmoid(x: float) -> float:
     return 1 / (1 + math.exp(-x))
+
+class Neuron:
+    """M-P神经元模型. 
+    在这个模型中, 神经元接收到来自n个其他神经元传递过来的输入信号, 
+    这些输入信号通过带权重的连接(connection)进行传递, 
+    神经元接收到的总输入值将与神经元的阀值进行比较, 然后通过"激活函数" (activation function) 处理以产生神经元的输出.
+
+    Attributes
+    ----------
+    activation_function : Callable
+        隐层激活函数, 默认为sigmoid函数.
+    threhold : float
+        神经元的阈值, 默认为0.
+
+    """
+    def __init__(self, activation_function: Callable[[float], float] = sigmoid, threhold: float = 0) -> None:
+        self.activation_function = activation_function
+        self.threhold = threhold
+
+    def active(self, inputs: np.ndarray, connection_weights: np.ndarray) -> float:
+        """激活神经元, 计算输出值.
+
+        Parameters
+        ----------
+        inputs: ndarray
+            上游神经元的输入值数组.
+        connection_weights: ndarray
+            神经元与上游神经元的链接权重数组.
+
+        Returns
+        ----------
+        经过激活函数计算后的输出值, 若输出值大于0, 则表示神经元被激活.
+        """
+        return np.sum(inputs * connection_weights) - self.threhold
 
 class SingleHidenLayerFeedforwardNeualNetworks:
     """单隐层前馈神经网络.

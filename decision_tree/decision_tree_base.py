@@ -160,7 +160,7 @@ class DecisionTreeNode:
             for key in self.children:
                 formated_children_dict[key] = self.children[key].dict()
             return {self.classify_name: formated_children_dict}
-    def inference(self, test_set: DataSet) -> DataSet:
+    def predict(self, test_set: DataSet) -> DataSet:
         """用决策树在数据集test_set上推理, 返回带标记的数据集.
         Parameters
         ----------
@@ -173,10 +173,10 @@ class DecisionTreeNode:
         """
         ret_set = DataSet(test_set.samples.copy(), test_set.label_name)
         for index, row in ret_set.samples.iterrows():
-            ret_set.samples.at[index, ret_set.label_name] = self.inference(row)
+            ret_set.samples.at[index, ret_set.label_name] = self.predict(row)
         return ret_set
 
-    def inference(self, sample: pd.Series) -> str:
+    def predict(self, sample: pd.Series) -> str:
         """用决策树在数据sample上推理, 返回带标记的数据集.
         Parameters
         ----------
@@ -207,7 +207,7 @@ class DecisionTreeNode:
         """
         error_count = 0
         for index, row in test_set.samples.iterrows():
-            prediction_value = self.inference(row)
+            prediction_value = self.predict(row)
             if prediction_value != row[test_set.label_name]:
                 error_count = error_count + 1
         error_rate = error_count / test_set.len()
