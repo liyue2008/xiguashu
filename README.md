@@ -52,5 +52,5 @@ OK
 
 ## 课后习题
 
-[第四章 决策树](./doc/Chapter_04.md)  
-[第五章 神经网络](./doc/Chapter_05.md)  
+[第四章 决策树](./doc/decision_tree.md)  
+[第五章 神经网络](./doc/neural_networks.md)  
