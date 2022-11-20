@@ -6,7 +6,7 @@ import pandas as pd
 from collections.abc import Callable
 from decision_tree import DataSet
 import numpy as np
-
+from __future__ import annotations
 
 def sigmoid_activation_function(x: float) -> float:
     return 1 / (1 + math.exp(-x))
@@ -42,22 +42,55 @@ class Neuron:
 
         self.activation_function = activation_function
         self.threshold = threshold if threshold >= 0 else random.random()
-
-    def active(self, inputs: np.ndarray, connection_weights: np.ndarray) -> float:
-        """激活神经元, 计算输出值.
+        self.__input_connections: List[NMConnection] = []
+        self.__output_connections: List[NMConnection] = []
+    @property
+    def input_connections(self) -> List[NMConnection]:
+        return self.__input_connections.copy()
+    @property
+    def output_connections(self) -> List[NMConnection]:
+        return self.__output_connections.copy()
+    def input(self, input: float) -> float:
+        """激活输入层神经元, 计算输出值.
 
         Parameters
         ----------
-        inputs: ndarray
-            上游神经元的输入值数组.
-        connection_weights: ndarray
-            神经元与上游神经元的链接权重数组.
+        input: float
+            神经元的输入值
 
         Returns
         ----------
         经过激活函数计算后的输出值, 若输出值大于0, 则表示神经元被激活.
         """
-        return np.sum(inputs * connection_weights) - self.threhold
+        return self.activation_function(input - self.threshold) if input > self.threshold else 0
+    def active(self, input: List[float]) -> float:
+        """激活神经元, 计算输出值.
+
+        Parameters
+        ----------
+        input: List[float]
+            上游神经元的输入值数组.
+
+        Returns
+        ----------
+        经过激活函数计算后的输出值, 若输出值大于0, 则表示神经元被激活.
+        """
+
+        weights = []
+        for c in self.__input_connections:
+            weights.append(c.weight)
+        np_weights = np.array(weights)
+        np_input = np.array(input)
+        return self.input(np.sum(np_input * np_weights))
+
+
+    def append_connection(self, connection: NMConnection) -> None:
+        if connection.src == self:
+            self.__output_connections.append(connection)
+        elif connection.des == self:
+            self.__input_connections.append(connection)
+        else:
+            raise ValueError('只能添加与神经元有连接关系的connection!')
 class NMLayer:
     """神经网络的层，包含若干神经元
     
@@ -78,7 +111,7 @@ class NMLayer:
                 输入初始阈值大于或等于0的时, 所有神经元的初试阈值都设为给定的初始阈值.
                 输入初始阈值小于0的时, 所有神经元将给定[0, 1)范围内的随机初始阈值.
         """
-        self.neutons = []
+        self.neutons: List[Neuron] = []
         for _ in range(size):
             self.neutons.append(Neuron(activation_function, threshold))
 
@@ -111,9 +144,11 @@ class NMConnection:
             输入大于或等于0的时, 连接权重设为给定的输入值.
             输入小于0的时, 连接权重设为[0, 1)范围内的随机值.
         """
-        self.src = src
-        self.des = des
-        self.weight = weight if weight >= 0 else random.random()
+        self.src: Neuron = src
+        self.des: Neuron = des
+        self.weight: float = weight if weight >= 0 else random.random()
+        src.append_connection(self)
+        des.append_connection(self)
 class NeualNetworks:
     """多层前馈神经网络.
 
@@ -121,13 +156,36 @@ class NeualNetworks:
     ----------
     layers: List[NMLayer]
         层的列表, 每层包含若干神经元.
-    connections: Set[NMConnection]
-        网络中神经元的连接集合.
     """
-    def __init__(self, layers: List[NMLayer], connections: Set[NMConnection]) -> None:
+    def __init__(self, layers: List[NMLayer]) -> None:
         self.layers = layers
-        self.connections = connections
-    def predict(self, input: List[float]) -> List[float]
+  
+    def __predict_input_check(self, input: List[float]) -> None:
+        """检查input中元素的个数应等于输入层神经元个数"""
+        li = len(input)
+        ln = len(self.layers[0].neutons)
+        if li != ln:
+            raise ValueError('input中元素的个数(%d)应等于输入层神经元个数(%d)!' % (li, ln))
+
+        
+    def predict(self, input: List[float]) -> List[float]:
+        """计算神经网络的输出"""
+        # 检查input中元素的个数应等于输入层神经元个数
+        self.__predict_input_check(input)
+        layer_output = []
+        for layer in self.layers:
+            pre_layer_output = layer_output
+            layer_output = []
+            for i, n in enumerate(layer.neutons):
+                if not pre_layer_output: # 输入层
+                    layer_output.append(n.input(input[i]))
+                else: # 非输入层
+                    layer_output.append(n.active(pre_layer_output))
+        return layer_output
+
+
+
+    
 class SingleHidenLayerNM(NeualNetworks):
     """单隐层前馈神经网络."""
 
@@ -154,14 +212,13 @@ class SingleHidenLayerNM(NeualNetworks):
         # 初始化输出层
         output_layer = NMLayer(output_layer_size, threshold = -1)
 
-        connections = {}
         # 初始化输入层-隐层连接
         for src in input_layer.neutons:
             for dest in hiden_layer.neutons:
-                connections.add(NMConnection(src, dest, -1))
+                NMConnection(src, dest, -1)
         
         for src in hiden_layer.neutons:
             for dest in output_layer.neutons:
-                connections.add(NMConnection(src, dest, -1))
+                NMConnection(src, dest, -1)
 
-        super().__init__([input_layer, hiden_layer, output_layer], connections)
+        super().__init__([input_layer, hiden_layer, output_layer])
