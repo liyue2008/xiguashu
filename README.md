@@ -30,7 +30,7 @@ LICENSE          data             lib              tests
 README.md        decision_tree    pyvenv.cfg
 bin              include          requirements.txt
  ~/temp/xiguashu $ source bin/activate
-(xiguashu)  ~/temp/xiguashu $ # 注意到命令提示符变了，有个(xiguashu)前缀，表示当前环境是一个名为xiguashu的Python环境
+(xiguashu)  ~/temp/xiguashu $ # 注意到命令提示符变了, 有个(xiguashu)前缀, 表示当前环境是一个名为xiguashu的Python环境
 ```
 
 安装项目所需的第三方包:

@@ -38,14 +38,14 @@ class Attribute:
         
 
 class DataSet:
-    """DataSet表示一个训练集，包含训练数据集和数据的标记。
+    """DataSet表示一个训练集, 包含训练数据集和数据的标记。
 
     Attributes
     ----------
     samples : DataFrame
-        训练数据集，包含训练样本和标记。
+        训练数据集, 包含训练样本和标记。
     label_name : str
-        在训练数据集samples中，标记列的列名。
+        在训练数据集samples中, 标记列的列名。
     """
     def  __init__(self, samples: pd.DataFrame, label_name: str = '') -> None :
         self.samples = samples
@@ -98,19 +98,26 @@ class DataSet:
             if (not all_same(self.samples[a.name].values)):
                 return False
         return True
-
+    def getSamples(self) -> pd.DataFrame:
+        """返回不含标记的样本数据
+        """
+        return self.samples.drop(self.label_name, 1)
+    def getLabels(self) -> pd.Series:
+        """返回标记数据
+        """
+        return self.samples[self.lable_name]
 class DecisionTreeNode:
-    """DecisionTreeNode表示一个一个决策树的节点和它的所有子节点，实际上也是一个决策树。
+    """DecisionTreeNode表示一个一个决策树的节点和它的所有子节点, 实际上也是一个决策树。
 
     Attributes
     ----------
     is_leaf : bool
         是否叶子节点.
     classify_name : str
-        最优划分属性名称，例如：‘色泽’;
+        最优划分属性名称, 例如：‘色泽’;
     children : dict
         key : str
-            分类(最优划分属性值)，例如：'青绿'；
+            分类(最优划分属性值), 例如：'青绿'；
         value : DecisionTreeNode
             子节点
         仅当非叶子节点时有效, 表示全部子节点.
@@ -262,7 +269,7 @@ def tree_generate(D: DataSet, A: set, select_partition_method, node_level_in_tre
     # TODO: 检查训练集D是否为空。
     # 1: 生成节点node
     node = DecisionTreeNode(depth= node_level_in_tree, children= {})
-    # (1)当前结点包含的样本全属于同一类别，无需划分;
+    # (1)当前结点包含的样本全属于同一类别, 无需划分;
     # 2: if D 中样本全属于同一类别C then
     # 3:   将 node 标记为 C 类叶节点；return；
     # 4: end if
@@ -273,9 +280,9 @@ def tree_generate(D: DataSet, A: set, select_partition_method, node_level_in_tre
         node.is_leaf = True
         return node
  
-    # (2)当前属性集为空，或是所有样本在所有属性上取值相同，无法划分;
+    # (2)当前属性集为空, 或是所有样本在所有属性上取值相同, 无法划分;
     # 5: if A = 空 OR D中样本在A上取值相同 then
-    # 6:    将 node 标记为叶子节点，其类别标记为D中样本最多的类; return
+    # 6:    将 node 标记为叶子节点, 其类别标记为D中样本最多的类; return
     # 7: end if
     node.label = majority_in_list(D.samples[D.label_name].to_list())
     if(len(A) == 0 or D.all_samples_same(A)):
@@ -292,7 +299,7 @@ def tree_generate(D: DataSet, A: set, select_partition_method, node_level_in_tre
     # 9: for a* 的每一个值 av* do
     # 10:   为 node 生成一个分支；另Dv表示 D 中在 a* 上取值为 av* 的样本子集；
     # 11:   if Dv 为空 then   
-    # 12:       将分支节点标记为叶节点，其类别标记为D中样本最多的类; return
+    # 12:       将分支节点标记为叶节点, 其类别标记为D中样本最多的类; return
     # 13:   else
     # 14:       以 tree_generate(Dv, A\{a*}) 为分支节点
     # 15:   end if

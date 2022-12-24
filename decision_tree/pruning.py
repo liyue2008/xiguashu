@@ -74,7 +74,7 @@ def is_postpruning(node: DecisionTreeNode, test_set: DataSet) -> bool:
     是否剪枝, true: 禁止划分(剪枝), false: 划分(不剪枝)。
     """
 
-    # 如果测试集为空，无法验证，不进行剪枝
+    # 如果测试集为空, 无法验证, 不进行剪枝
     if test_set.len() == 0:
         return False
 
@@ -140,7 +140,7 @@ def tree_generate_prepruning(training_set: DataSet, test_set: DataSet, A: set, s
     # print(node_level_in_tree, D, A)
     # 1: 生成节点node
     node = DecisionTreeNode(depth= node_level_in_tree, children= {})
-    # (1)当前结点包含的样本全属于同一类别，无需划分;
+    # (1)当前结点包含的样本全属于同一类别, 无需划分;
     # 2: if D 中样本全属于同一类别C then
     # 3:   将 node 标记为 C 类叶节点；return；
     # 4: end if
@@ -151,9 +151,9 @@ def tree_generate_prepruning(training_set: DataSet, test_set: DataSet, A: set, s
         node.is_leaf = True
         return node
  
-    # (2)当前属性集为空，或是所有样本在所有属性上取值相同，无法划分;
+    # (2)当前属性集为空, 或是所有样本在所有属性上取值相同, 无法划分;
     # 5: if A = 空 OR D中样本在A上取值相同 then
-    # 6:    将 node 标记为叶子节点，其类别标记为D中样本最多的类; return
+    # 6:    将 node 标记为叶子节点, 其类别标记为D中样本最多的类; return
     # 7: end if
     if(len(A) == 0 or training_set.all_samples_same(A)):
         node.is_leaf = True
@@ -173,7 +173,7 @@ def tree_generate_prepruning(training_set: DataSet, test_set: DataSet, A: set, s
     # 9: for a* 的每一个值 av* do
     # 10:   为 node 生成一个分支；另Dv表示 D 中在 a* 上取值为 av* 的样本子集；
     # 11:   if Dv 为空 then   
-    # 12:       将分支节点标记为叶节点，其类别标记为D中样本最多的类; return
+    # 12:       将分支节点标记为叶节点, 其类别标记为D中样本最多的类; return
     # 13:   else
     # 14:       以 tree_generate(Dv, A\{a*}) 为分支节点
     # 15:   end if
@@ -259,20 +259,20 @@ def main():
     
     tree = tree_generate_gini(training_data_set, A)
     accuracy = tree.accuracy(test_data_set)
-    print('\n输出-未剪枝的决策树，精度 = %.1f%%.' % (accuracy * 100))
+    print('\n输出-未剪枝的决策树, 精度 = %.1f%%.' % (accuracy * 100))
     print(tree)
     print('==========')
 
 
     tree_prepruning = tree_generate_gini_prepruning(training_data_set, test_data_set, A)
     accuracy = tree_prepruning.accuracy(test_data_set)
-    print('\n输出-预剪枝的决策树，精度 = %.1f%%.' % (accuracy * 100))
+    print('\n输出-预剪枝的决策树, 精度 = %.1f%%.' % (accuracy * 100))
     print(tree_prepruning)
     print('==========')
 
     tree_postpruning = postpruning(tree, test_data_set)
     accuracy = tree_postpruning.accuracy(test_data_set)
-    print('\n输出-后剪枝的决策树，精度 = %.1f%%.' % (accuracy * 100))
+    print('\n输出-后剪枝的决策树, 精度 = %.1f%%.' % (accuracy * 100))
     print(tree_postpruning)
 
 if __name__ == '__main__':

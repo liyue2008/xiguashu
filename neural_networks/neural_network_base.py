@@ -1,12 +1,11 @@
 #-*-coding:utf-8-*- 
+from __future__ import annotations
 import math
 import random
-from typing import List, Set
-import pandas as pd
+from typing import List
 from collections.abc import Callable
-from decision_tree import DataSet
 import numpy as np
-from __future__ import annotations
+
 
 def sigmoid_activation_function(x: float) -> float:
     return 1 / (1 + math.exp(-x))
@@ -92,7 +91,7 @@ class Neuron:
         else:
             raise ValueError('只能添加与神经元有连接关系的connection!')
 class NMLayer:
-    """神经网络的层，包含若干神经元
+    """神经网络的层, 包含若干神经元
     
     Attributes
     ----------

@@ -16,7 +16,7 @@ def ent(D: DataSet) -> float:
     样本集合 D 的信息熵(information entropy)
     """
     
-    """样本中各分类的数量，
+    """样本中各分类的数量, 
         例如：
         好瓜    数量
         是     2

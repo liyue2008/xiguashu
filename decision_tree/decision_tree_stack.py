@@ -62,7 +62,7 @@ def tree_generate_stack(training_set: DataSet, attributes: set, select_partition
         node = item.node
         D = item.training_set
         A = item.attributes
-        # (1)当前结点包含的样本全属于同一类别，无需划分;
+        # (1)当前结点包含的样本全属于同一类别, 无需划分;
         # 2: if D 中样本全属于同一类别C then
         # 3:   将 node 标记为 C 类叶节点；return；
         # 4: end if
@@ -73,9 +73,9 @@ def tree_generate_stack(training_set: DataSet, attributes: set, select_partition
             node.is_leaf = True
             continue
     
-        # (2)当前属性集为空，或是所有样本在所有属性上取值相同，无法划分;
+        # (2)当前属性集为空, 或是所有样本在所有属性上取值相同, 无法划分;
         # 5: if A = 空 OR D中样本在A上取值相同 then
-        # 6:    将 node 标记为叶子节点，其类别标记为D中样本最多的类; return
+        # 6:    将 node 标记为叶子节点, 其类别标记为D中样本最多的类; return
         # 7: end if
         node.label = majority_in_list(D.samples[D.label_name].to_list())
         if len(A) == 0 or D.all_samples_same(A) or (max_depth > 0 and node.depth + 1 >= max_depth): 
@@ -92,7 +92,7 @@ def tree_generate_stack(training_set: DataSet, attributes: set, select_partition
         # 9: for a* 的每一个值 av* do
         # 10:   为 node 生成一个分支；另Dv表示 D 中在 a* 上取值为 av* 的样本子集；
         # 11:   if Dv 为空 then   
-        # 12:       将分支节点标记为叶节点，其类别标记为D中样本最多的类; return
+        # 12:       将分支节点标记为叶节点, 其类别标记为D中样本最多的类; return
         # 13:   else
         # 14:       以 tree_generate(Dv, A\{a*}) 为分支节点
         # 15:   end if
