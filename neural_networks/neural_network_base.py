@@ -5,6 +5,7 @@ import random
 from typing import List
 from collections.abc import Callable
 import numpy as np
+import pandas as pd
 
 
 def sigmoid_activation_function(x: float) -> float:
@@ -12,6 +13,25 @@ def sigmoid_activation_function(x: float) -> float:
 def input_activation_function(x: float) -> float:
     return x
 
+class TrainingSet:
+    """包含样本和标记的训练集.
+    输入样本x由d个属性描述, 即d维实值向量.
+    输出样本(即标记值)y由l个属性描述, 即l维实值向量.
+    
+    Attributes
+    ----------
+    samples: pd.DataFrame
+        输入样本x由d个属性描述, 即d维实值向量.
+    labels: pd.DataFrame
+        输出样本(即标记值)y由l个属性描述, 即l维实值向量.
+    """
+    def __init__(self, samples: pd.DataFrame, labels: pd.DataFrame) -> None:
+        self.samples = samples
+        self.labels = labels
+        assert (len(samples.index) == len(labels.index)), "Samples and labels should be same size!"
+    
+    def __len__(self) -> int:
+        return len(self.samples.index)
 
 class Neuron:
     """M-P神经元模型. 
@@ -169,10 +189,17 @@ class NeualNetworks:
         
     def predict(self, input: List[float]) -> List[float]:
         """计算神经网络的输出"""
+        return self.__calc_layer_output(input, len(self.layers) - 1)
+
+    def __calc_layer_output(self, input: List[float], layer_index: int) -> List[float]:
+        """对于给定的输入input, 计算神经网络从输入层开始, 到指定层layer_index的输出值.
+        """
         # 检查input中元素的个数应等于输入层神经元个数
         self.__predict_input_check(input)
+        assert (layer_index >=0 and layer_index < len(self.layers)), F"layer_index 的取值范围应是：[0, {len(self.layers)}), 实际值: {layer_index}"
         layer_output = []
-        for layer in self.layers:
+        for index in range(layer_index + 1):
+            layer = self.layers[index]
             pre_layer_output = layer_output
             layer_output = []
             for i, n in enumerate(layer.neutons):
@@ -182,8 +209,72 @@ class NeualNetworks:
                     layer_output.append(n.active(pre_layer_output))
         return layer_output
 
+    def bp_training(self, training_set: TrainingSet, learning_rate: float, stop_function: Callable[[TrainingSet, SingleHidenLayerNM]], bool) -> None:
+        """逆误差传播算法(Back Progaration)的实现.
+        
+        Parameters
+        ----------
+        training_set : TrainingSet
+            训练集, 包含训练数据集和标记集.
+        learning_rate: float
+            学习率, 取值范围(0, 1), 学习率控制着算法每一轮迭代中的更新步长.
 
+        Returns
+        -------
+        连接权与阈值确定的多层前馈神经网络.
+        """
+       
+        # 1. 在(0, 1)范围内随机初始化网络中的所有连接权和阈值 
+        # 2. repeat
+        while True:
+            # 3. for all (xk, yk) ∈ trainning_set do
+            for index, sample in training_set.samples.iterrows():
 
+                # 4. 根据当前参数和式(5.3)计算当前样本的输出^yk
+                predict_values = pd.Series(self.predict(sample.tolist())) # 神经网络预测值
+                labeled_values = training_set.labels.iloc[index] # 标记值
+
+                # 5. 根据式(5.10)计算输出层神经元的梯度项gj
+                gradient_output_layer_list = []
+                for j in range(predict_values.size):
+                    predict_value = predict_values.iloc[j]
+                    labeled_value = labeled_values.iloc[j]
+                    gradient = predict_value * ( 1 - predict_value) * (labeled_value - predict_value)
+                    gradient_output_layer_list.append(gradient)
+                # 6. 根据式(5.15)计算隐层神经元的梯度项eh
+                gradient_upper_layer = gradient_output_layer_list # 上一层神经元的梯度
+                for layer_index in reversed(range(0, self.layers - 1)): # 自顶向下遍历所有的隐层，计算每一隐层神经元的梯度项
+                    output_current_layer = self.__calc_layer_output(sample, layer_index) # 本层神经元输出
+                    gradient_current_layer = [] # 本层神经元梯度
+                    for h, n in enumerate(self.layers[layer_index].neutons): # 遍历当前隐层每个神经元
+                        # 计算与上一层连接权与梯度的乘积之和
+                        total_gj_x_whj = 0
+                        for j, gj in enumerate(gradient_upper_layer): 
+                            whj = n.output_connections[j].weight
+                            total_gj_x_whj += gj * whj
+                        # 计算当前神经元的输出值
+                        bh = output_current_layer[h] 
+                        # 计算当前神经元的梯度
+                        eh = bh * (1 - bh) * total_gj_x_whj 
+                        gradient_current_layer.append(eh)
+
+                # 7. 根据式(5.11)-(5.14)更新连接权whj,vih与阈值θj, γh
+
+                        # 遍历上层神经元
+                        for j, nu in enumerate(self.layers[layer_index + 1].neutons): 
+                            # 根据式(5.11)更新连接权whj
+                            gj = gradient_upper_layer[j]
+                            delta_whj = learning_rate * gj * bh
+                            n.output_connections[j].weight += delta_whj
+                            # 根据式(5.12)更新阈值θj
+                            delta_theta_j = -1 * learning_rate * gj
+                            nu.threshold += delta_theta_j 
+
+                    gradient_upper_layer = gradient_current_layer.copy()
+            # 8. end for
+        # 9. until 达到停止条件
+            if stop_function(training_set, self):
+                break
     
 class SingleHidenLayerNM(NeualNetworks):
     """单隐层前馈神经网络."""
