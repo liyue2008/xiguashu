@@ -1,8 +1,9 @@
 #-*-coding:utf-8-*- 
 from __future__ import annotations
+from ast import Tuple
 import math
 import random
-from typing import List
+from typing import Any, Dict, List
 from collections.abc import Callable
 import numpy as np
 import pandas as pd
@@ -12,6 +13,33 @@ def sigmoid_activation_function(x: float) -> float:
     return 1 / (1 + math.exp(-x))
 def input_activation_function(x: float) -> float:
     return x
+
+CONST_CONFIG_KEY_TIMES = 'times'
+def stop_function_by_times(training_set: TrainingSet, neualNetworks: NeualNetworks, accumulator: int, config: Dict[str, Any]) -> Tuple[bool, int]:
+    """ 判断训练停止条件的函数, 达到既定训练次数后就停止. 
+        Parameters
+        ----------
+            training_set: TrainingSet
+                训练集, 包含训练数据集和标记集.
+            neualNetworks: NeualNetworks
+                被训练的神经网络.
+            accumulator: Any
+                累加器. 这是一个任意类型的变量, 其类型可由实现自行定义, 用于多次调用停止函数时记录一些需要累计的数据.
+            config: Dict[str, Any]
+                训练配置, 这里需接收一个停止次数参数, key为CONST_CONFIG_KEY_TIMES, value必须为正整数.
+        Returns
+        -------
+            stop: bool
+                True: 停止训练, False: 继续训练.
+            accumulator: Any
+                累加器. 
+    """
+    training_times = config[CONST_CONFIG_KEY_TIMES]
+    assert (training_times and type(training_times) is int and training_times > 0), "停止次数(参数config[%s])必须是正整数!" % (CONST_CONFIG_KEY_TIMES)
+    if not accumulator:
+        accumulator = 0
+    accumulator = accumulator + 1
+    return (accumulator < training_times, accumulator)
 
 class TrainingSet:
     """包含样本和标记的训练集.
@@ -41,10 +69,14 @@ class Neuron:
 
     Attributes
     ----------
-    activation_function : Callable
+    activation_function : Callable[[float], float]
         激活函数.
     threshold : float
         神经元的阈值.
+    input_connections: List[NMConnection]
+        输入连接.
+    output_connections: List[NMConnection]
+        输出连接.
     """
     def __init__(self, activation_function: Callable[[float], float] = sigmoid_activation_function, threshold: float = 0) -> None:
         """创建并初始化神经元.
@@ -95,9 +127,7 @@ class Neuron:
         经过激活函数计算后的输出值, 若输出值大于0, 则表示神经元被激活.
         """
 
-        weights = []
-        for c in self.__input_connections:
-            weights.append(c.weight)
+        weights = list(map(lambda c: c.weight, self.__input_connections))
         np_weights = np.array(weights)
         np_input = np.array(input)
         return self.input(np.sum(np_input * np_weights))
@@ -136,6 +166,24 @@ class NMLayer:
 
     def __len__(self) -> int:
          return len(self.neutons)
+    @property
+    def thresholds(self):
+        """每个神经元的阈值数组."""
+        return np.array(list(map(lambda n: n.threshold, self.neutons)))
+    @property
+    def input_weigths(self) -> np.matrix[float, float]:
+        """本层与下层连接权值. 返回值是一个二维矩阵, 列数=本层神经元个数，行数=下层神经元的个数.
+        """
+        weight_2d_list = list(map(lambda n: list(map(lambda c: c.weight, n.input_connections)), self.neutons))
+        return np.matrix(weight_2d_list).T
+    def __str__(self) -> str:
+        np.set_printoptions(precision=3)
+        ret = '%s\n' % self.thresholds
+
+        weight_matrix = self.input_weigths
+        if weight_matrix.size > 0:
+            ret += '%s\n' % weight_matrix
+        return ret
 class NMConnection:
     """神经网络中神经元之间的连接.
     信号传递方向: src --(weight)--> des
@@ -178,6 +226,14 @@ class NeualNetworks:
     """
     def __init__(self, layers: List[NMLayer]) -> None:
         self.layers = layers
+    
+    def __str__(self) -> str:
+        layers = list(map(lambda layer:str(layer), self.layers))
+        ret = ''
+        for i, layer_str in reversed(list(enumerate(layers))):
+            ret += '第%d层%d个神经元(阈值, 连接权值):\n' % (i, len(self.layers[i]))
+            ret += layer_str
+        return ret   
   
     def __predict_input_check(self, input: List[float]) -> None:
         """检查input中元素的个数应等于输入层神经元个数"""
@@ -209,16 +265,35 @@ class NeualNetworks:
                     layer_output.append(n.active(pre_layer_output))
         return layer_output
 
-    def back_propagation(self, training_set: TrainingSet, learning_rate: float, stop_function: Callable[[TrainingSet, SingleHidenLayerNM]], bool) -> None:
+    def back_propagation(self, training_set: TrainingSet, learning_rate: float, stop_function: Callable[[TrainingSet, NeualNetworks, Any, Dict[str, Any]], Tuple[bool, Any]], config: Dict[str, Any] = {}) -> None:
         """逆误差传播算法(Back Propagation)的实现.
         
         Parameters
         ----------
-        training_set : TrainingSet
+        training_set: TrainingSet
             训练集, 包含训练数据集和标记集.
         learning_rate: float
             学习率, 取值范围(0, 1), 学习率控制着算法每一轮迭代中的更新步长.
-
+        stop_function: Callable[[TrainingSet, NeualNetworks, Any], bool])
+            判断训练停止条件的函数. 
+            Parameters
+            ----------
+                training_set: TrainingSet
+                    训练集, 包含训练数据集和标记集.
+                neualNetworks: NeualNetworks
+                    被训练的神经网络.
+                accumulator: Any
+                    累加器. 这是一个任意类型的变量, 其类型可由实现自行定义, 用于多次调用停止函数时记录一些需要累计的数据.
+                config: Dict[str, Any]
+                    训练配置, 可定义.
+            Returns
+            -------
+                stop: bool
+                    True: 停止训练, False: 继续训练.
+                accumulator: Any
+                    累加器.
+        config: Dict[str, Any]
+            训练配置, 可定义.
         Returns
         -------
         连接权与阈值确定的多层前馈神经网络.
@@ -226,6 +301,7 @@ class NeualNetworks:
        
         # 1. 在(0, 1)范围内随机初始化网络中的所有连接权和阈值 
         # 2. repeat
+        acc = None
         while True:
             # 3. for all (xk, yk) ∈ trainning_set do
             for index, sample in training_set.samples.iterrows():
@@ -268,7 +344,8 @@ class NeualNetworks:
                     gradient_upper_layer = gradient_current_layer.copy()
             # 8. end for
             # 9. until 达到停止条件
-            if stop_function(training_set, self):
+            (stop, acc) = stop_function(training_set, self, acc)
+            if stop:
                 break
     def __calc_layer_gradient(self,layer_index: int, output_current_layer: List[float], gradient_upper_layer: List[float]) -> List[float]:
         """根据式(5.15)计算一层神经元的梯度项.
@@ -304,9 +381,6 @@ class NeualNetworks:
 
 class SingleHidenLayerNM(NeualNetworks):
     """单隐层前馈神经网络."""
-
-
-
     def __init__(self, input_layer_size: int, hiden_layer_size: int, output_layer_size: int) -> None:
         """初始化单隐层前馈神经网络.
         激活函数为Sigmoid函数, 所有连接权值和输出阈值为(0, 1)范围内的随机值.

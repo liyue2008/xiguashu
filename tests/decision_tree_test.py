@@ -1,11 +1,7 @@
 #-*-coding:utf-8-*- 
 import unittest as ut
 import pandas as pd
-import sys
-from pathlib import Path
-sys.path[0] = str(Path(sys.path[0]).parent)
 from decision_tree import *
-from decision_tree import gain, gini, pruning
 
 class TestDecisionTreeMethods(ut.TestCase):
     def test_all_same(self):
@@ -112,7 +108,7 @@ class TestDecisionTreeMethods(ut.TestCase):
         df = pd.read_csv(data_file)
         df.set_index('编号', inplace=True)
         D = DataSet(df, '好瓜')
-        actrual_ent = gain.ent(D)
+        actrual_ent = ent(D)
         # print('actrual_ent = %d\n' % actrual_ent)
         self.assertEqual(expect_ent, round(actrual_ent, 3))
     
@@ -124,7 +120,7 @@ class TestDecisionTreeMethods(ut.TestCase):
         a = Attribute('密度', is_continuous=True)
         expected = (0.262, 0.382)
 
-        actrual = gain.gain_continuous(D, a)
+        actrual = gain_continuous(D, a)
         actrual_round = (round(actrual[0], 3), round(actrual[1], 3))
         # print(actrual)
         self.assertTupleEqual(expected, actrual_round)
@@ -137,7 +133,7 @@ class TestDecisionTreeMethods(ut.TestCase):
         df = pd.read_csv(data_file)
         df.set_index('编号', inplace=True)
         D = DataSet(df, '好瓜')
-        actrual_gain = gain.gain_discrete(D, a)
+        actrual_gain = gain_discrete(D, a)
         # print(actrual_gain)
         self.assertEqual(expect_gain, round(actrual_gain, 3))
 
@@ -147,7 +143,7 @@ class TestDecisionTreeMethods(ut.TestCase):
         df = pd.read_csv(data_file)
         df.set_index('编号', inplace=True)
         D = DataSet(df, '好瓜')
-        actrual_gini = gini.gini(D)
+        actrual_gini = gini(D)
         # print('actrual_gini = %d\n' % actrual_gini)
         self.assertEqual(expect_gini, round(actrual_gini, 3))
     
@@ -178,8 +174,5 @@ class TestDecisionTreeMethods(ut.TestCase):
         test_data_set = DataSet(test_df, '好瓜')
         node = DecisionTreeNode(classify_name='脐部')
         
-        actrual = pruning.is_prepruning(node, training_data_set, test_data_set, 0, training_data_set.partition_by_attr(Attribute('脐部', {'凹陷', '稍凹', '平坦'})))
+        actrual = is_prepruning(node, training_data_set, test_data_set, 0, training_data_set.partition_by_attr(Attribute('脐部', {'凹陷', '稍凹', '平坦'})))
         self.assertFalse(actrual)
-    
-if __name__ == '__main__':
-    ut.main()

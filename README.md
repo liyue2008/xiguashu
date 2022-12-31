@@ -42,7 +42,7 @@ bin              include          requirements.txt
 至此环境已经设置好了. 执行一个单元测试验证一下:
 
 ```bash
-(xiguashu) ~/temp/xiguashu $ python3 tests/decision_tree_test.py
+(xiguashu) ~/temp/xiguashu $ python3 -m unittest discover -v -s 'tests' -p '*_test.py' -t .
 .........
 ----------------------------------------------------------------------
 Ran 9 tests in 0.096s

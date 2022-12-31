@@ -117,7 +117,7 @@ class DecisionTreeNode:
         最优划分属性名称, 例如：‘色泽’;
     children : dict
         key : str
-            分类(最优划分属性值), 例如：'青绿'；
+            分类(最优划分属性值), 例如：'青绿';
         value : DecisionTreeNode
             子节点
         仅当非叶子节点时有效, 表示全部子节点.
