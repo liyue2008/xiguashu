@@ -148,8 +148,7 @@ class TestDecisionTreeMethods(ut.TestCase):
         self.assertEqual(expect_gini, round(actrual_gini, 3))
     
     def test_DecisionTreeNode_accuracy(self):
-        """用例取自<机器学习>P84 图 4.6
-        """
+        # 用例取自<机器学习>P84 图 4.6
         test_df = pd.read_csv('data/西瓜数据集 2.0 验证集.csv').set_index('编号')
         test_data_set = DataSet(test_df, '好瓜')
         node = DecisionTreeNode(is_leaf=True, label='是')
