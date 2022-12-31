@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "pruning",
             "type": "python",
@@ -33,6 +34,12 @@
             "type": "python",
             "request": "launch",
             "module": "decision_tree.decision_tree_stack",
+            "justMyCode": true
+        },{
+            "name": "neural_networks_base",
+            "type": "python",
+            "request": "launch",
+            "module": "neural_networks.neural_networks_base",
             "justMyCode": true
         }
     ]

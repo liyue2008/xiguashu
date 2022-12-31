@@ -302,7 +302,14 @@ class NeualNetworks:
         # 1. 在(0, 1)范围内随机初始化网络中的所有连接权和阈值 
         # 2. repeat
         acc = None
+        times = 0
         while True:
+            # 打印误差和网络
+            ce = self.cumulative_error(training_set)
+            print('已训练%d轮, 累积误差: %.4f' % (times, ce))
+            times = times + 1
+            print('当前网络:')
+            print(self)
             # 3. for all (xk, yk) ∈ trainning_set do
             for index, sample in training_set.samples.iterrows():
 
@@ -347,6 +354,11 @@ class NeualNetworks:
             (stop, acc) = stop_function(training_set, self, acc)
             if stop:
                 break
+        ce = self.cumulative_error(training_set)
+        print('已训练%d轮, 累积误差: %.4f' % (times, ce))
+        times = times + 1
+        print('当前网络:')
+        print(self)
     def __calc_layer_gradient(self,layer_index: int, output_current_layer: List[float], gradient_upper_layer: List[float]) -> List[float]:
         """根据式(5.15)计算一层神经元的梯度项.
         
@@ -377,7 +389,41 @@ class NeualNetworks:
             eh = bh * (1 - bh) * total_gj_x_whj
             layer_gradient.append(eh)
         return layer_gradient
-
+    def mean_squared_error(self, sample: List[float], lable: List[float]) -> float:
+        """计算神经网络在给定样本sample相对于标记label的均方误差(MSE).
+        
+        Parameters
+        ----------
+        sample: List[float]
+            样本数据, 数组长度应等于网络输入层神经元个数.
+        lable: List[float]
+            标记数据, 数组长度应等于网络输出层神经元个数.
+        
+        Returns
+        -------
+            给定样本sample相对于标记label的均方误差(MSE).
+        """
+        predicts = self.predict(sample)
+        mse = 0
+        for j, predict in enumerate(predicts):
+            mse += (predict - lable[j]) ** 2
+        return mse
+    def cumulative_error(self, training_set: TrainingSet) -> float:
+        """计算神经网络在给定训练集training_set上的累积误差.
+        
+        Parameters
+        ----------
+        training_set: TrainingSet
+            给定训练集, 包含样本和标记
+        Returns
+        -------
+            神经网络在给定训练集training_set上的累积误差.
+        """
+        ce = 0
+        for k, sample in training_set.samples.iterrows():
+            label = training_set.labels.iloc[[k]]
+            ce += self.mean_squared_error(sample.tolist(), label.tolist())
+        return ce / len(training_set)
 
 class SingleHidenLayerNM(NeualNetworks):
     """单隐层前馈神经网络."""
@@ -412,3 +458,21 @@ class SingleHidenLayerNM(NeualNetworks):
                 NMConnection(src, dest, -1)
 
         super().__init__([input_layer, hiden_layer, output_layer])
+
+if __name__ == '__main__':
+    config = {CONST_CONFIG_KEY_TIMES: 20}
+    df = pd.read_csv('data/西瓜数据集 3.0.csv')
+    df.set_index('编号', inplace=True)
+    sample_set = df[['密度', '含糖率']]
+    label_set = df[['好瓜']]
+    label_set.loc[label_set['好瓜'] == '是', '好瓜'] = 1
+    label_set.loc[label_set['好瓜'] == '否', '好瓜'] = 0
+    print('输入-训练集:')
+    print(sample_set)
+    print('\n输入-标记集:')
+    print(label_set)
+    training_set = TrainingSet(sample_set, label_set)
+    leaning_rate = 0.1
+    nm = SingleHidenLayerNM(2, 2, 2)
+    nm.back_propagation(training_set, leaning_rate, stop_function_by_times, config)
+
