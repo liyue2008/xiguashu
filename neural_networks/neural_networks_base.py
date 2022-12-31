@@ -421,7 +421,8 @@ class NeualNetworks:
         """
         ce = 0
         for k, sample in training_set.samples.iterrows():
-            label = training_set.labels.iloc[[k]]
+            print(k)
+            label = training_set.labels.loc[[k]].values.flatten()
             ce += self.mean_squared_error(sample.tolist(), label.tolist())
         return ce / len(training_set)
 
@@ -473,6 +474,6 @@ if __name__ == '__main__':
     print(label_set)
     training_set = TrainingSet(sample_set, label_set)
     leaning_rate = 0.1
-    nm = SingleHidenLayerNM(2, 2, 2)
+    nm = SingleHidenLayerNM(2, 2, 1)
     nm.back_propagation(training_set, leaning_rate, stop_function_by_times, config)
 
