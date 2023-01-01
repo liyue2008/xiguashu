@@ -39,7 +39,7 @@ def stop_function_by_times(training_set: TrainingSet, neualNetworks: NeualNetwor
     if not accumulator:
         accumulator = 0
     accumulator = accumulator + 1
-    return (accumulator < training_times, accumulator)
+    return (accumulator >= training_times, accumulator)
 
 class TrainingSet:
     """包含样本和标记的训练集.
@@ -315,18 +315,18 @@ class NeualNetworks:
 
                 # 4. 根据当前参数和式(5.3)计算当前样本的输出^yk
                 predict_values = pd.Series(self.predict(sample.tolist())) # 神经网络预测值
-                labeled_values = training_set.labels.iloc[index] # 标记值
+                labeled_values = training_set.labels.loc[index] # 标记值
 
                 # 5. 根据式(5.10)计算输出层神经元的梯度项gj
                 gradient_output_layer = []
                 for j in range(predict_values.size):
                     predict_value = predict_values.iloc[j]
                     labeled_value = labeled_values.iloc[j]
-                    gradient = predict_value * ( 1 - predict_value) * (labeled_value - predict_value)
+                    gradient = predict_value * (1 - predict_value) * (labeled_value - predict_value)
                     gradient_output_layer.append(gradient)
                
                 gradient_upper_layer = gradient_output_layer # 上一层神经元的梯度
-                for layer_index in reversed(range(0, self.layers - 1)): # 自顶向下遍历所有的隐层和输入层，计算每一隐层神经元的梯度项
+                for layer_index in reversed(range(len(self.layers) - 1)): # 自顶向下遍历所有的隐层和输入层，计算每一隐层神经元的梯度项
                     output_current_layer = self.__calc_layer_output(sample, layer_index) # 本层神经元输出
                     # 6. 根据式(5.15)计算隐层神经元的梯度项eh
                     gradient_current_layer = self.__calc_layer_gradient(layer_index, output_current_layer, gradient_upper_layer) # 本层神经元梯度
@@ -351,7 +351,7 @@ class NeualNetworks:
                     gradient_upper_layer = gradient_current_layer.copy()
             # 8. end for
             # 9. until 达到停止条件
-            (stop, acc) = stop_function(training_set, self, acc)
+            (stop, acc) = stop_function(training_set, self, acc, config)
             if stop:
                 break
         ce = self.cumulative_error(training_set)
@@ -406,7 +406,7 @@ class NeualNetworks:
         predicts = self.predict(sample)
         mse = 0
         for j, predict in enumerate(predicts):
-            mse += (predict - lable[j]) ** 2
+            mse += ((predict - lable[j]) ** 2) / 2
         return mse
     def cumulative_error(self, training_set: TrainingSet) -> float:
         """计算神经网络在给定训练集training_set上的累积误差.
@@ -421,7 +421,6 @@ class NeualNetworks:
         """
         ce = 0
         for k, sample in training_set.samples.iterrows():
-            print(k)
             label = training_set.labels.loc[[k]].values.flatten()
             ce += self.mean_squared_error(sample.tolist(), label.tolist())
         return ce / len(training_set)
@@ -461,7 +460,8 @@ class SingleHidenLayerNM(NeualNetworks):
         super().__init__([input_layer, hiden_layer, output_layer])
 
 if __name__ == '__main__':
-    config = {CONST_CONFIG_KEY_TIMES: 20}
+    pd.set_option('mode.chained_assignment', None)
+    config = {CONST_CONFIG_KEY_TIMES: 1}
     df = pd.read_csv('data/西瓜数据集 3.0.csv')
     df.set_index('编号', inplace=True)
     sample_set = df[['密度', '含糖率']]
