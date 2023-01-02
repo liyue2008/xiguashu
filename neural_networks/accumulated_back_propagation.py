@@ -1,8 +1,8 @@
 #-*-coding:utf-8-*- 
 from .neural_networks_base import *
 
-def back_propagation(nn: NeualNetworks, training_set: TrainingSet, learning_rate: float, stop_function: Callable[[TrainingSet, NeualNetworks, Any, Dict[str, Any]], Tuple[bool, Any]], config: Dict[str, Any] = {}) -> None:
-    """逆误差传播算法(Back Propagation)的实现.
+def accumulated_back_propagation(nn: NeualNetworks, training_set: TrainingSet, learning_rate: float, stop_function: Callable[[TrainingSet, NeualNetworks, Any, Dict[str, Any]], Tuple[bool, Any]], config: Dict[str, Any] = {}) -> None:
+    """累积误差传播算法(Accumulated Back Propagation)的实现.
     
     Parameters
     ----------
@@ -48,6 +48,7 @@ def back_propagation(nn: NeualNetworks, training_set: TrainingSet, learning_rate
         times = times + 1
         print('当前网络:')
         print(nn)
+        
         # 3. for all (xk, yk) ∈ trainning_set do
         for index, sample in training_set.samples.iterrows():
 
@@ -79,16 +80,31 @@ def back_propagation(nn: NeualNetworks, training_set: TrainingSet, learning_rate
                     for j, _ in enumerate(nn.layers[layer_index + 1].neutons):  # 遍历上层神经元
                         gj = gradient_upper_layer[j]
                         delta_whj = learning_rate * gj * output_current_layer[h]
-                        n.output_connections[j].weight += delta_whj
+                        n.output_connections[j].delta_weights.append(delta_whj)
 
                 # 7.2 根据式(5.12)更新阈值θj
                 for j, nu in enumerate(nn.layers[layer_index + 1].neutons): 
                     gj = gradient_upper_layer[j]
                     delta_theta_j = -1 * learning_rate * gj
-                    nu.threshold += delta_theta_j
+                    nu.delta_thresholds.append(delta_theta_j)
 
                 gradient_upper_layer = gradient_current_layer.copy()
         # 8. end for
+
+        # 更新连接权值和神经元阈值
+        for layer_index, layer in enumerate(nn.layers):
+            if layer_index == 0: # 忽略输入层
+                continue
+            for n in layer.neutons:
+                # 更新神经元阈值
+                n.threshold += sum(n.delta_thresholds) / len(n.delta_thresholds)
+                n.delta_thresholds = []
+                # 更新神经元输入连接的阈值
+                for ic in n.input_connections:
+                    ic.weight += sum(ic.delta_weights) / len(ic.delta_weights)
+                    ic.delta_weights = []
+                
+
         # 9. until 达到停止条件
         (stop, acc) = stop_function(training_set, nn, acc, config)
         if stop:
@@ -101,7 +117,7 @@ def back_propagation(nn: NeualNetworks, training_set: TrainingSet, learning_rate
 
 if __name__ == '__main__':
     pd.set_option('mode.chained_assignment', None)
-    # 停止条件是训练20轮
+    # 停止条件是训练200轮
     config = {CONST_CONFIG_KEY_TIMES: 20}
     df = pd.read_csv('data/西瓜数据集 3.0.csv')
     df.set_index('编号', inplace=True)
@@ -116,4 +132,4 @@ if __name__ == '__main__':
     training_set = TrainingSet(sample_set, label_set)
     leaning_rate = 0.1
     nn = NeualNetworks([2, 2, 1])
-    back_propagation(nn, training_set, leaning_rate, stop_function_by_times, config)
+    accumulated_back_propagation(nn, training_set, leaning_rate, stop_function_by_times, config)

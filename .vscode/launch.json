@@ -36,10 +36,16 @@
             "module": "decision_tree.decision_tree_stack",
             "justMyCode": true
         },{
-            "name": "neural_networks_base",
+            "name": "back_propagation",
             "type": "python",
             "request": "launch",
-            "module": "neural_networks.neural_networks_base",
+            "module": "neural_networks.back_propagation",
+            "justMyCode": true
+        },{
+            "name": "accumulated_back_propagation",
+            "type": "python",
+            "request": "launch",
+            "module": "neural_networks.accumulated_back_propagation",
             "justMyCode": true
         }
     ]

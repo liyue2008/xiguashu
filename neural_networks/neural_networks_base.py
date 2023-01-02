@@ -39,6 +39,40 @@ def stop_function_by_times(training_set: TrainingSet, neualNetworks: NeualNetwor
     accumulator = accumulator + 1
     return (accumulator >= training_times, accumulator)
 
+def calc_layer_gradient(nn: NeualNetworks,layer_index: int, output_current_layer: List[float], gradient_upper_layer: List[float]) -> List[float]:
+    """根据式(5.15)计算一层神经元的梯度项.
+    
+    Parameters
+    ----------
+    nm: NeualNetworks
+        被训练的神经网络.
+    layer_index : int
+        计算第layer_index层.
+    output_current_layer : List[float]
+        当前层神经元的输出值.       
+    gradient_upper_layer: List[float]
+        当前层上一层神经元的梯度.
+    
+    Returns
+    -------
+    true: D中样本在A上取值相同。
+    false: D中样本在A上取值不完全相同。
+    """
+    layer_gradient = [] # 本层神经元梯度
+    for h, n in enumerate(nn.layers[layer_index].neutons): # 遍历当前隐层每个神经元
+    # 计算与上一层连接权与梯度的乘积之和
+        total_gj_x_whj = 0
+        for j, gj in enumerate(gradient_upper_layer): 
+            whj = n.output_connections[j].weight
+            total_gj_x_whj += gj * whj
+        # 计算当前神经元的输出值
+        bh = output_current_layer[h] 
+        # 计算当前神经元的梯度
+        eh = bh * (1 - bh) * total_gj_x_whj
+        layer_gradient.append(eh)
+    return layer_gradient
+
+
 class TrainingSet:
     """包含样本和标记的训练集.
     输入样本x由d个属性描述, 即d维实值向量.
@@ -75,6 +109,8 @@ class Neuron:
         输入连接.
     output_connections: List[NMConnection]
         输出连接.
+    delta_thresholds: List[float]
+        用于在累积BP算法计算过程中记录阈值的delta
     """
     def __init__(self, activation_function: Callable[[float], float] = sigmoid_activation_function, threshold: float = 0, random_threshold: bool = True) -> None:
         """创建并初始化神经元.
@@ -93,6 +129,7 @@ class Neuron:
         self.threshold = self.__random_threshold() if random_threshold else threshold
         self.__input_connections: List[NMConnection] = []
         self.__output_connections: List[NMConnection] = []
+        self.delta_thresholds = []
     @property
     def input_connections(self) -> List[NMConnection]:
         return self.__input_connections.copy()
@@ -202,6 +239,8 @@ class NMConnection:
         原神经元.
     weight: float
         连接权重.
+    delta_weights: List[float]
+        用于在累积BP算法计算过程中记录权值的delta
     """ 
     def __init__(self, src: Neuron, des: Neuron, weight: float = 0, random_weight: bool= True) -> None:
         """初始化神经网络中神经元之间的连接.
@@ -220,8 +259,10 @@ class NMConnection:
         self.src: Neuron = src
         self.des: Neuron = des
         self.weight: float =  self.__random_weight() if random_weight else weight
+        self.delta_weights = []
         src.append_connection(self)
         des.append_connection(self)
+
     def __random_weight(self) -> float:
         """将连接权值设置为(0, 1)随机值."""
         self.weight = random.random()
