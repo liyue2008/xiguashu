@@ -300,16 +300,39 @@ class NeualNetworks:
             raise ValueError('input中元素的个数(%d)应等于输入层神经元个数(%d)!' % (li, ln))
 
         
-    def predict(self, input: List[float]) -> List[float]:
-        """计算神经网络的输出"""
+    def predict(self, input: List[float]) -> List[List[float]]:
+        """"对于给定的输入input, 计算神经网络的输出, 并返回每一层的输出值.
+        Parameters
+        ----------
+        input: List[float]
+            输入样本.
+        layer_index: int
+            制定层的序号.
+        
+        Returns
+        -------
+            返回每一层的输出值, 返回值是一个2D list: list[layer_index][neuron_index].
+        """
         return self.__calc_layer_output(input, len(self.layers) - 1)
 
-    def __calc_layer_output(self, input: List[float], layer_index: int) -> List[float]:
-        """对于给定的输入input, 计算神经网络从输入层开始, 到指定层layer_index的输出值.
+    def __calc_layer_output(self, input: List[float], layer_index: int) -> List[List[float]]:
+        """对于给定的输入input, 计算神经网络从输入层开始, 到指定层layer_index的输出值, 并返回每一层的输出值.
+        
+        Parameters
+        ----------
+        input: List[float]
+            输入样本.
+        layer_index: int
+            制定层的序号.
+        
+        Returns
+        -------
+            返回每一层的输出值, 返回值是一个2D list: list[layer_index][neuron_index].
         """
         # 检查input中元素的个数应等于输入层神经元个数
         self.__predict_input_check(input)
         assert (layer_index >=0 and layer_index < len(self.layers)), F"layer_index 的取值范围应是：[0, {len(self.layers)}), 实际值: {layer_index}"
+        ret = []
         layer_output = []
         for index in range(layer_index + 1):
             layer = self.layers[index]
@@ -320,7 +343,8 @@ class NeualNetworks:
                     layer_output.append(n.input(input[i]))
                 else: # 非输入层
                     layer_output.append(n.active(pre_layer_output))
-        return layer_output
+            ret.append(layer_output)
+        return ret
 
     def back_propagation(self, training_set: TrainingSet, learning_rate: float, stop_function: Callable[[TrainingSet, NeualNetworks, Any, Dict[str, Any]], Tuple[bool, Any]], config: Dict[str, Any] = {}) -> None:
         """逆误差传播算法(Back Propagation)的实现.
@@ -371,7 +395,8 @@ class NeualNetworks:
             for index, sample in training_set.samples.iterrows():
 
                 # 4. 根据当前参数和式(5.3)计算当前样本的输出^yk
-                predict_values = pd.Series(self.predict(sample.tolist())) # 神经网络预测值
+                predict_matrix = self.predict(sample.tolist())
+                predict_values = pd.Series(predict_matrix[len(predict_matrix) - 1]) # 神经网络预测值
                 labeled_values = training_set.labels.loc[index] # 标记值
 
                 # 5. 根据式(5.10)计算输出层神经元的梯度项gj
@@ -384,7 +409,7 @@ class NeualNetworks:
                
                 gradient_upper_layer = gradient_output_layer # 上一层神经元的梯度
                 for layer_index in reversed(range(len(self.layers) - 1)): # 自顶向下遍历所有的隐层和输入层，计算每一隐层神经元的梯度项
-                    output_current_layer = self.__calc_layer_output(sample, layer_index) # 本层神经元输出
+                    output_current_layer = predict_matrix[layer_index] # 本层神经元输出
                     # 6. 根据式(5.15)计算隐层神经元的梯度项eh
                     gradient_current_layer = self.__calc_layer_gradient(layer_index, output_current_layer, gradient_upper_layer) # 本层神经元梯度
                     
@@ -460,7 +485,8 @@ class NeualNetworks:
         -------
             给定样本sample相对于标记label的均方误差(MSE).
         """
-        predicts = self.predict(sample)
+        predict_matrix = self.predict(sample)
+        predicts = predict_matrix[len(predict_matrix) - 1]
         mse = 0
         for j, predict in enumerate(predicts):
             mse += ((predict - lable[j]) ** 2) / 2

@@ -29,14 +29,9 @@ class TestNeuralNetworksMethods(ut.TestCase):
         self.assertIsNotNone(str(snm))
 
     def test_NeuralNetworks_predict(self):
-        snm = NeualNetworks([2, 2], 
-        threshold = 0.5, random_threshold = False,
-        weight = 0.1, random_weight = False)
-        output = snm.predict([2, 5])
-        self.assertListEqual([0.5498, 0.5498], list(map(lambda v: round(v, 4), output)))
-
         snm = NeualNetworks([2, 2, 2], 
         threshold = 0.5, random_threshold = False,
         weight = 0.1, random_weight = False)
-        output = snm.predict([2, 5])
-        self.assertListEqual([0.4037, 0.4037], list(map(lambda v: round(v, 4), output)))
+        predict_values = snm.predict([2, 5])
+        self.assertListEqual([0.5498, 0.5498], list(map(lambda v: round(v, 4), predict_values[1])))
+        self.assertListEqual([0.4037, 0.4037], list(map(lambda v: round(v, 4), predict_values[2])))
