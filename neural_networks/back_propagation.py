@@ -101,8 +101,6 @@ def back_propagation(nn: NeualNetworks, training_set: TrainingSet, learning_rate
 
 if __name__ == '__main__':
     pd.set_option('mode.chained_assignment', None)
-    # 停止条件是训练20轮
-    config = {CONST_CONFIG_KEY_TIMES: 20}
     df = pd.read_csv('data/西瓜数据集 3.0.csv')
     df.set_index('编号', inplace=True)
     sample_set = df[['密度', '含糖率']]
@@ -113,7 +111,8 @@ if __name__ == '__main__':
     print(sample_set)
     print('\n输入-标记集:')
     print(label_set)
-    training_set = TrainingSet(sample_set, label_set)
-    leaning_rate = 0.1
-    nn = NeualNetworks([2, 2, 1])
+    training_set = TrainingSet(sample_set, label_set)     
+    config = {CONST_CONFIG_KEY_TIMES: 20} # 停止条件是训练20轮
+    leaning_rate = 0.1 # 学习率
+    nn = NeualNetworks([2, 2, 1]) 
     back_propagation(nn, training_set, leaning_rate, stop_function_by_times, config)

@@ -16,7 +16,7 @@ neural_networks
 
 ## 5.2 试述使用 图5.2(b) 的激活函数的神经元与对率回归的联系.
 
-答: 对数几率回归(Logistic Regression), 简称对率回归. 用来将空间上的向量映射为0或1, 也就是用于做二分类. 单位阶跃函数是最理想的一种, 但因为不连续, 所以不是单调可微函数. 而$sigmoid$函数是单位阶跃函数的理想替代, 在一定程度上近似单位阶跃函数, 并且单调可微, 是任意阶可导的凸函数.  使用 $Sigmoid$ 激活函数, 每个神经元几乎和对率回归相同, 只不过对率回归在 $sigmoid(x)>0.5$ 时输出为1, 而神经元直接输出 $sigmoid(x)$ 。
+答: 对数几率回归(Logistic Regression), 简称对率回归. 用来将空间上的向量映射为0或1, 也就是用于做二分类. 单位阶跃函数是最理想的一种, 但因为不连续, 所以不是单调可微函数. 而$sigmoid$函数是单位阶跃函数的理想替代, 在一定程度上近似单位阶跃函数, 并且单调可微, 是任意阶可导的凸函数.  使用 $Sigmoid$ 激活函数, 每个神经元几乎和对率回归相同, 只不过对率回归在$sigmoid(x)>0.5$时输出为1, 而神经元直接输出$sigmoid(x)$。
 
 ## 5.3 对于图5.7中的$v_{ih}$, 试推导出BP算法中的更新公式(5.13).
 
@@ -31,7 +31,7 @@ neural_networks
 
 ### 标准BP算法
 
-标准BP算法在西瓜数据集3.0上训练20轮：
+标准BP算法在西瓜数据集3.0上以学习率$\eta=0.1$训练20轮：
 
 ```bash
 $ python3 -m neural_networks.back_propagation
@@ -117,13 +117,6 @@ $ python3 -m neural_networks.back_propagation
  [0.776 0.624]]
 第0层2个神经元(阈值, 连接权值):
 [0 0]
-```
-
-停止条件是训练达到指定轮次, 如需修改训练轮次, 编辑neural_networks/back_propagation.py:
-
-```python
-# 停止条件是训练20轮
-config = {CONST_CONFIG_KEY_TIMES: 20}
 ```
 
 ### 累积BP算法
@@ -215,13 +208,17 @@ $ python3 -m neural_networks.accumulated_back_propagation
 [0 0]
 ```
 
-停止条件是训练达到指定轮次, 如需修改训练轮次, 编辑neural_networks/accumulated_back_propagation.py:
-
-```python
-# 停止条件是训练20轮
-config = {CONST_CONFIG_KEY_TIMES: 20}
-```
-
 ### 标准BP算法和累积BP算法比较
 
-标准BP算法每次针对单个训练样例更新权值与阈值，参数更新频繁, 不同样例可能抵消, 需要多次迭代；累积BP算法其优化目标是最小化整个训练集上的累计误差读取整个训练集一遍才对参数进行更新, 参数更新频率较低。在很多任务中, 累计误差下降到一定程度后, 进一步下降会非常缓慢, 这时标准BP算法往往会获得较好的解, 尤其当训练集非常大时效果更明显。
+标准BP算法每次针对单个训练样例更新权值与阈值，参数更新频繁, 不同样例可能抵消, 需要多次迭代；累积BP算法其优化目标是最小化整个训练集上的累计误差读取整个训练集一遍才对参数进行更新, 参数更新频率较低。在很多任务中, 累计误差下降到一定程度后, 进一步下降会非常缓慢, 这时标准BP算法往往会获得较好的解, 尤其当训练集非常大时效果更明显.
+
+以本题的例子，在西瓜数据集3.0，大约需要训练1000-2000轮可以看出二种算法收敛速度有明显差距.
+
+### 修改训练参数
+
+编辑[neural_networks/accumulated_back_propagation.py](neural_networks/accumulated_back_propagation.py)和[neural_networks/back_propagation.py](neural_networks/back_propagation.py)的main方法可以修改训练参数:
+
+```python
+    config = {CONST_CONFIG_KEY_TIMES: 20} # 停止条件是训练20轮
+    leaning_rate = 0.1 # 学习率
+```
