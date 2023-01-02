@@ -216,7 +216,7 @@ $ python3 -m neural_networks.accumulated_back_propagation
 
 ### 修改训练参数
 
-编辑[neural_networks/accumulated_back_propagation.py](neural_networks/accumulated_back_propagation.py)和[neural_networks/back_propagation.py](neural_networks/back_propagation.py)的main方法可以修改训练参数:
+编辑[accumulated_back_propagation.py](../neural_networks/accumulated_back_propagation.py)和[back_propagation.py](../neural_networks/back_propagation.py)的main方法可以修改训练参数:
 
 ```python
     config = {CONST_CONFIG_KEY_TIMES: 20} # 停止条件是训练20轮
