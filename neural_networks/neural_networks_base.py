@@ -78,21 +78,21 @@ class Neuron:
     output_connections: List[NMConnection]
         输出连接.
     """
-    def __init__(self, activation_function: Callable[[float], float] = sigmoid_activation_function, threshold: float = 0) -> None:
+    def __init__(self, activation_function: Callable[[float], float] = sigmoid_activation_function, threshold: float = 0, random_threshold: bool = True) -> None:
         """创建并初始化神经元.
             
             Parameters
             ----------
-            activation_function : Callable
+            activation_function: Callable[[float], float] = sigmoid_activation_function
                 激活函数, 默认为sigmoid函数.
-            threshold : float
-                神经元的初始阈值。
-                输入初始阈值大于或等于0的时, 所有神经元的初试阈值都设为给定的初始阈值.
-                输入初始阈值小于0的时, 所有神经元将给定[0, 1)范围内的随机初始阈值.
+            threshold: float = 0
+                如果random_threshold == False, 将除输入层以外的所有神经元阈值初始化为固定值threshold.
+            random_threshold: bool = True
+                忽略给定的阈值threshold, 将除输入层以外的所有神经元阈值初始化为(0, 1)范围内的随机值.
         """
 
         self.activation_function = activation_function
-        self.threshold = threshold if threshold >= 0 else random.random()
+        self.threshold = self.__random_threshold() if random_threshold else threshold
         self.__input_connections: List[NMConnection] = []
         self.__output_connections: List[NMConnection] = []
     @property
@@ -113,7 +113,13 @@ class Neuron:
         ----------
         经过激活函数计算后的输出值, 若输出值大于0, 则表示神经元被激活.
         """
-        return self.activation_function(input - self.threshold) if input > self.threshold else 0
+        return self.activation_function(input - self.threshold)
+
+    def __random_threshold(self) -> float:
+        """将阈值设置为(0, 1)随机值."""
+        self.threshold = random.random()
+        return self.threshold if self.threshold != 0 else self.__random_threshold()
+
     def active(self, input: List[float]) -> float:
         """激活神经元, 计算输出值.
 
@@ -148,21 +154,21 @@ class NMLayer:
     neutons : List[Neuron]
         神经元列表
     """
-    def __init__(self, size: int, activation_function: Callable[[float], float] = sigmoid_activation_function, threshold: float = 0) -> None:
+    def __init__(self, size: int, activation_function: Callable[[float], float] = sigmoid_activation_function, threshold: float = 0, random_threshold: bool = True) -> None:
         """创建并初始化神经网络中的一层。
             
             Parameters
             ----------
             activation_function : Callable
                 激活函数, 默认为sigmoid函数.
-            threshold : float
-                神经元的初始阈值。
-                输入初始阈值大于或等于0的时, 所有神经元的初试阈值都设为给定的初始阈值.
-                输入初始阈值小于0的时, 所有神经元将给定[0, 1)范围内的随机初始阈值.
+            threshold: float = 0
+                如果random_threshold == False, 将除输入层以外的所有神经元阈值初始化为固定值threshold.
+            random_threshold: bool = True
+                忽略给定的阈值threshold, 将除输入层以外的所有神经元阈值初始化为(0, 1)范围内的随机值.
         """
         self.neutons: List[Neuron] = []
         for _ in range(size):
-            self.neutons.append(Neuron(activation_function, threshold))
+            self.neutons.append(Neuron(activation_function, threshold, random_threshold))
 
     def __len__(self) -> int:
          return len(self.neutons)
@@ -184,6 +190,8 @@ class NMLayer:
         if weight_matrix.size > 0:
             ret += '%s\n' % weight_matrix
         return ret
+    
+
 class NMConnection:
     """神经网络中神经元之间的连接.
     信号传递方向: src --(weight)--> des
@@ -197,7 +205,7 @@ class NMConnection:
     weight: float
         连接权重.
     """ 
-    def __init__(self, src: Neuron, des: Neuron, weight: float) -> None:
+    def __init__(self, src: Neuron, des: Neuron, weight: float = 0, random_weight: bool= True) -> None:
         """初始化神经网络中神经元之间的连接.
 
         Parameters
@@ -206,16 +214,20 @@ class NMConnection:
             原神经元.
         des : Neuron
             目标神经元.
-        weight : float
-            连接权重.
-            输入大于或等于0的时, 连接权重设为给定的输入值.
-            输入小于0的时, 连接权重设为[0, 1)范围内的随机值.
+        weight: float = 0
+            如果random_weight == False, 将所有连接权值设置为固定值weight.
+        random_weight: bool = True
+            忽略给定的连接权值weight, 将所有连接权值设置为(0, 1)范围内的随机值.
         """
         self.src: Neuron = src
         self.des: Neuron = des
-        self.weight: float = weight if weight >= 0 else random.random()
+        self.weight: float =  self.__random_weight() if random_weight else weight
         src.append_connection(self)
         des.append_connection(self)
+    def __random_weight(self) -> float:
+        """将连接权值设置为(0, 1)随机值."""
+        self.weight = random.random()
+        return self.weight if self.weight != 0 else self.random_weight()
 class NeualNetworks:
     """多层前馈神经网络.
 
@@ -224,9 +236,36 @@ class NeualNetworks:
     layers: List[NMLayer]
         层的列表, 每层包含若干神经元.
     """
-    def __init__(self, layers: List[NMLayer]) -> None:
-        self.layers = layers
-    
+    def __init__(self, neuron_count: List[int], threshold: float = 0, random_threshold: bool = True, weight: float = 0, random_weight: bool = True, activation_function: Callable[[float], float] = sigmoid_activation_function) -> None:
+        """初始化多层前馈神经网络.
+        
+        Parameters
+        ----------
+        neuron_count: List[int]
+            每层神经元的个数.
+            len(neuron_count)就是神经网络的层数.
+            第0层为输入层, 第len(neuron_count) - 1层为输出层, 其它层为隐层.
+            neuron_count[i]为第i层神经元的个数.
+        threshold: float = 0
+            如果random_threshold == False, 将除输入层以外的所有神经元阈值初始化为固定值threshold.
+        random_threshold: bool = True
+            忽略给定的阈值threshold, 将除输入层以外的所有神经元阈值初始化为(0, 1)范围内的随机值.
+        weight: float = 0
+            如果random_weight == False, 将所有连接权值设置为固定值weight.
+        random_weight: bool = True
+            忽略给定的连接权值weight, 将所有连接权值设置为(0, 1)范围内的随机值.
+        activation_function: Callable[[float], float] = sigmoid_activation_function
+            隐层和输出层的激活函数, 默认为sigmoid函数.
+        """
+        # 初始化每层的神经元
+        self.layers = []
+        for index, size in enumerate(neuron_count):
+            if index == 0: # 输入层
+                self.layers.append(NMLayer(size, input_activation_function, 0, False))
+            else: # 隐层和输出层
+                self.layers.append(NMLayer(size, activation_function, threshold, random_threshold))
+        # 初始化相邻层的神经元之间的连接
+        self.__init_layer_connections(weight, random_weight)
     def __str__(self) -> str:
         layers = list(map(lambda layer:str(layer), self.layers))
         ret = ''
@@ -234,9 +273,27 @@ class NeualNetworks:
             ret += '第%d层%d个神经元(阈值, 连接权值):\n' % (i, len(self.layers[i]))
             ret += layer_str
         return ret   
-  
+    def __init_layer_connections(self, weight: float = 0, random_weight: bool = True) -> None:
+        """初始化神经网络的连接.
+        
+        Parameters
+        ----------
+        weight: float = 0
+            如果random_weight == False, 将所有连接权值设置为固定值weight.
+        random_weight: bool = True
+            忽略给定的连接权值weight, 将所有连接权值设置为(0, 1)范围内的随机值.
+        """
+        for layer_index in range(len(self.layers)):
+            if layer_index + 1 >= len(self.layers):
+                break
+            layer = self.layers[layer_index]
+            upper_layer = self.layers[layer_index + 1]
+            for src in layer.neutons:
+                for dest in upper_layer.neutons:
+                    NMConnection(src, dest, weight, random_weight)
+
     def __predict_input_check(self, input: List[float]) -> None:
-        """检查input中元素的个数应等于输入层神经元个数"""
+        """检查input中元素的个数应等于输入层神经元个数""" 
         li = len(input)
         ln = len(self.layers[0].neutons)
         if li != ln:
@@ -425,43 +482,9 @@ class NeualNetworks:
             ce += self.mean_squared_error(sample.tolist(), label.tolist())
         return ce / len(training_set)
 
-class SingleHidenLayerNM(NeualNetworks):
-    """单隐层前馈神经网络."""
-    def __init__(self, input_layer_size: int, hiden_layer_size: int, output_layer_size: int) -> None:
-        """初始化单隐层前馈神经网络.
-        激活函数为Sigmoid函数, 所有连接权值和输出阈值为(0, 1)范围内的随机值.
-        Parameters
-        ----------
-        input_layer_size : int
-            单隐层前馈神经网络中输入层神经元个数.
-        hiden_layer_size : int
-            单隐层前馈神经网络中隐层神经元个数.
-        output_layer_size : int
-            单隐层前馈神经网络中输出层神经元个数.
-
-        """
-        
-        # 初始化输入层
-        input_layer = NMLayer(input_layer_size, input_activation_function)
-        # 初始化隐层
-        hiden_layer = NMLayer(hiden_layer_size)
-        # 初始化输出层
-        output_layer = NMLayer(output_layer_size, threshold = -1)
-
-        # 初始化输入层-隐层连接
-        for src in input_layer.neutons:
-            for dest in hiden_layer.neutons:
-                NMConnection(src, dest, -1)
-        
-        for src in hiden_layer.neutons:
-            for dest in output_layer.neutons:
-                NMConnection(src, dest, -1)
-
-        super().__init__([input_layer, hiden_layer, output_layer])
-
 if __name__ == '__main__':
     pd.set_option('mode.chained_assignment', None)
-    config = {CONST_CONFIG_KEY_TIMES: 1}
+    config = {CONST_CONFIG_KEY_TIMES: 2000}
     df = pd.read_csv('data/西瓜数据集 3.0.csv')
     df.set_index('编号', inplace=True)
     sample_set = df[['密度', '含糖率']]
@@ -474,6 +497,6 @@ if __name__ == '__main__':
     print(label_set)
     training_set = TrainingSet(sample_set, label_set)
     leaning_rate = 0.1
-    nm = SingleHidenLayerNM(2, 2, 1)
+    nm = NeualNetworks([2, 2, 1])
     nm.back_propagation(training_set, leaning_rate, stop_function_by_times, config)
 
