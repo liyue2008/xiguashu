@@ -1,7 +1,6 @@
 #-*-coding:utf-8-*- 
 import unittest as ut
 from neural_networks import *
-import pandas as pd
 
 class TestNeuralNetworksMethods(ut.TestCase):
     def test_sigmoid_activation_function(self):
