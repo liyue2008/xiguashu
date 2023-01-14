@@ -85,10 +85,50 @@ class TrainingSet:
     labels: pd.DataFrame
         输出样本(即标记值)y由l个属性描述, 即l维实值向量.
     """
-    def __init__(self, samples: pd.DataFrame, labels: pd.DataFrame) -> None:
-        self.samples = samples
-        self.labels = labels
-        assert (len(samples.index) == len(labels.index)), "Samples and labels should be same size!"
+    def __init__(self, data: pd.DataFrame, label_column: str = 'class', sample_columns: List[str] = []) -> None:
+        """初始训练数据集..
+
+        Parameters
+        ----------
+        data: pd.DataFrame
+            数据集data包含输入样本和输出样本(即标记), 例如：
+                sepal length  sepal width  petal length  petal width           class
+            0             5.1          3.5           1.4          0.2     Iris-setosa
+            1             4.9          3.0           1.4          0.2     Iris-setosa
+            ..            ...          ...           ...          ...             ...
+            148           6.2          3.4           5.4          2.3  Iris-virginica
+            149           5.9          3.0           5.1          1.8  Iris-virginica
+            
+            其中, 前四列为输入样本, 第5列class为标记值.
+        label_column: str = 'class'
+            输出样本的属性名.
+        sample_columns: List[str] = []
+            输入样本的属性名列表. 如果未提供则自动取data中除了label_column以外的所有列.
+        """
+        self.__data = data
+        self.lable_column = label_column
+        assert (label_column in data.columns), "No column named %s in data!" % label_column
+        
+        
+        if not sample_columns: 
+            sample_columns = list(data.columns.drop(label_column))
+        self.samples = data[sample_columns]
+
+        class_value_set = set()
+        for _, row in data.iterrows():
+           class_value_set.add(row[label_column])
+        class_value_list = list(class_value_set)
+        
+        output_list = []
+        for _, row in data.iterrows():
+            v = row[label_column]
+            output = []
+            for class_value in class_value_list:
+                output.append(1 if v == class_value else 0)
+            output_list.append(output)
+
+        self.labels = pd.DataFrame(output_list)
+        self.labels.columns = list(map(lambda v: "%s=%s" % (label_column, v), class_value_list))
     
     def __len__(self) -> int:
         return len(self.samples.index)
@@ -417,7 +457,7 @@ class NeualNetworks:
         """
         ce = 0
         for k, sample in training_set.samples.iterrows():
-            label = training_set.labels.loc[[k]].values.flatten()
+            label = training_set.labels.iloc[[k]].values.flatten()
             ce += self.mean_squared_error(sample.tolist(), label.tolist())
         return ce / len(training_set)
 

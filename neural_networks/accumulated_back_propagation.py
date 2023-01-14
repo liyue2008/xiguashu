@@ -118,17 +118,14 @@ def accumulated_back_propagation(nn: NeualNetworks, training_set: TrainingSet, l
 if __name__ == '__main__':
     pd.set_option('mode.chained_assignment', None)
     df = pd.read_csv('data/西瓜数据集 3.0.csv')
-    df.set_index('编号', inplace=True)
-    sample_set = df[['密度', '含糖率']]
-    label_set = df[['好瓜']]
-    label_set.loc[label_set['好瓜'] == '是', '好瓜'] = 1
-    label_set.loc[label_set['好瓜'] == '否', '好瓜'] = 0
+    sample_set = df[['密度', '含糖率', '好瓜']]
+    training_set = TrainingSet(df[['密度', '含糖率', '好瓜']], '好瓜')
+
     print('输入-训练集:')
-    print(sample_set)
+    print(training_set.samples)
     print('\n输入-标记集:')
-    print(label_set)
-    training_set = TrainingSet(sample_set, label_set)
+    print(training_set.labels)
     config = {CONST_CONFIG_KEY_TIMES: 20} # 停止条件是训练20轮
     leaning_rate = 0.1 # 学习率
-    nn = NeualNetworks([2, 2, 1])
+    nn = NeualNetworks([2, 2, 2])
     accumulated_back_propagation(nn, training_set, leaning_rate, stop_function_by_times, config)

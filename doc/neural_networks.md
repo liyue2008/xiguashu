@@ -222,3 +222,9 @@ $ python3 -m neural_networks.accumulated_back_propagation
     config = {CONST_CONFIG_KEY_TIMES: 20} # 停止条件是训练20轮
     leaning_rate = 0.1 # 学习率
 ```
+
+## 5.6 试设计一个BP改进算法，能通过动态调整学习率显著提升收敛速度. 编程实现该算法，并选择两个[UCI数据集](http://archive.ics.uci.edu/ml/)与标准BP算法进行实验比较
+
+增大学习率可以提高收敛速度，但过高的学习率容易导致网络的错误率收敛到一定程度后反复震荡，这时就需要进一步降低学习率提高精度.
+
+这里实现一个最简单的动态调整学习率算法, 固定每n次训练, 将学习率乘以一个[0, 1)的系数, 以降低学习率.
