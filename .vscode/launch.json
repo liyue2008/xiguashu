@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
 
         {
             "name": "pruning",
@@ -46,6 +47,12 @@
             "type": "python",
             "request": "launch",
             "module": "neural_networks.accumulated_back_propagation",
+            "justMyCode": true
+        },{
+            "name": "dynamic_learning_rate",
+            "type": "python",
+            "request": "launch",
+            "module": "neural_networks.dynamic_learning_rate",
             "justMyCode": true
         }
     ]

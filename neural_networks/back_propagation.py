@@ -1,7 +1,7 @@
 #-*-coding:utf-8-*- 
 from .neural_networks_base import *
 
-def back_propagation(nn: NeualNetworks, training_set: TrainingSet, learning_rate: float, stop_function: Callable[[TrainingSet, NeualNetworks, Any, Dict[str, Any]], Tuple[bool, Any]], config: Dict[str, Any] = {}) -> None:
+def back_propagation(nn: NeualNetworks, training_set: TrainingSet, learning_rate_provider: Callable[[Any, Dict[str, Any]], Tuple[float, Any]], stop_function: Callable[[TrainingSet, NeualNetworks, Any, Dict[str, Any]], Tuple[bool, Any]], config: Dict[str, Any] = {}) -> None:
     """逆误差传播算法(Back Propagation)的实现.
     
     Parameters
@@ -10,10 +10,22 @@ def back_propagation(nn: NeualNetworks, training_set: TrainingSet, learning_rate
         被训练的神经网络.
     training_set: TrainingSet
         训练集, 包含训练数据集和标记集.
-    learning_rate: float
-        学习率, 取值范围(0, 1), 学习率控制着算法每一轮迭代中的更新步长.
+    learning_rate_provider: Callable[[Any, Dict[str, Any]], Tuple[float, Any]]
+        学习率提供函数, 每一轮训练调用一次, 用于获取本轮训练的学习率, 学习率控制着算法每一轮迭代中的更新步长.
+        
+        Parameters
+        ----------
+            accumulator: Any
+                累加器. 这是一个任意类型的变量, 其类型可由实现自行定义, 用于多次调用停止函数时记录一些需要累计的数据.
+            config: Dict[str, Any]
+                训练配置, 可定义.
+        Returns
+        -------
+            learning_rate: float
+                学习率.
+
     stop_function: Callable[[TrainingSet, NeualNetworks, Any], bool])
-        判断训练停止条件的函数. 
+        判断训练停止条件的函数, 每一轮训练调用一次. 
         Parameters
         ----------
             training_set: TrainingSet
@@ -39,15 +51,23 @@ def back_propagation(nn: NeualNetworks, training_set: TrainingSet, learning_rate
     
     # 1. 在(0, 1)范围内随机初始化网络中的所有连接权和阈值 
     # 2. repeat
-    acc = None
-    times = 0
+    acc_stop_function = None
+    acc_learning_rate = None
+    epoch = 0 
+    ce_list = []
+    print('开始训练神经网络.\n轮次: 累积误差 (较上次变化) 学习率')
+
     while True:
-        # 打印误差和网络
         ce = nn.cumulative_error(training_set)
-        print('已训练%d轮, 累积误差: %.4f' % (times, ce))
-        times = times + 1
-        print('当前网络:')
-        print(nn)
+        ce_last = ce if not ce_list else ce_list[-1]
+        # 记录累积误差
+        ce_list.append(ce)
+
+        # 计算学习率
+        (learning_rate, acc_learning_rate) = learning_rate_provider(acc_learning_rate, config)
+        # 打印误差和网络
+        print('%d: %.6f (%+.6f) %.6f' % (epoch, ce, (ce - ce_last), learning_rate))
+
         # 3. for all (xk, yk) ∈ trainning_set do
         for index, sample in training_set.samples.iterrows():
 
@@ -90,25 +110,30 @@ def back_propagation(nn: NeualNetworks, training_set: TrainingSet, learning_rate
                 gradient_upper_layer = gradient_current_layer.copy()
         # 8. end for
         # 9. until 达到停止条件
-        (stop, acc) = stop_function(training_set, nn, acc, config)
+        (stop, acc_stop_function) = stop_function(training_set, nn, acc_stop_function, config)
         if stop:
             break
+        epoch = epoch + 1
+
     ce = nn.cumulative_error(training_set)
-    print('已训练%d轮, 累积误差: %.4f' % (times, ce))
-    times = times + 1
-    print('当前网络:')
-    print(nn)
+    ce_last = ce if not ce_list else ce_list[-1]
+    print('%d: %.6f (%+.6f) %.6f' % (epoch, ce, (ce - ce_last), learning_rate))
+    epoch = epoch + 1
+    print('训练完成.')
+
 
 if __name__ == '__main__':
     pd.set_option('mode.chained_assignment', None)
     df = pd.read_csv('data/西瓜数据集 3.0.csv')
     sample_set = df[['密度', '含糖率', '好瓜']]
     training_set = TrainingSet(df[['密度', '含糖率', '好瓜']], '好瓜')
-    print('输入-训练集:')
-    print(training_set.samples)
-    print('\n输入-标记集:')
-    print(training_set.labels)
-    config = {CONST_CONFIG_KEY_TIMES: 20} # 停止条件是训练20轮
-    leaning_rate = 0.1 # 学习率
+    print('输入:')
+    print(training_set)
+    config = {
+        CONST_CONFIG_KEY_TIMES: 2000, # 停止条件是训练2000轮
+        CONST_CONFIG_KEY_LEARNING_RATE: 0.1 # 学习率
+        } 
     nn = NeualNetworks([2, 2, 2]) 
-    back_propagation(nn, training_set, leaning_rate, stop_function_by_times, config)
+    back_propagation(nn, training_set, fixed_learning_rate_provider, stop_function_by_times, config)
+    print('输出-神经网络:')
+    print(nn)
