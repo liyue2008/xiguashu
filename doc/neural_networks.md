@@ -3,10 +3,12 @@
 这一章的习题都放在[neural_networks](../neural_networks/)目录下, 目录结构如下:
 
 ```bash
+$ tree neural_networks
 neural_networks
 ├── __init__.py
 ├── accumulated_back_propagation.py  # 累积BP算法实现
 ├── back_propagation.py # 标准BP算法实现
+├── dynamic_learning_rate.py # 动态学习率标准BP算法的实现
 └── neural_networks_base.py # 神经网络数据模型、预测算法、均方差和累积误差的实现
 ```
 
