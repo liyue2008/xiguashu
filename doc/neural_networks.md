@@ -304,7 +304,7 @@ $ python3 -m neural_networks.dynamic_learning_rate
 
 ### 如何调整动态学习率相关参数?
 
-在[dynamic_learning_rate.py](../neural_networks/dynamic_learning_rate.py)中的配置变量config增加如下配置: 
+在[dynamic_learning_rate.py](../neural_networks/dynamic_learning_rate.py)中的配置变量config增加如下配置:
 
 ```python
 CONST_CONFIG_KEY_VERBOSE: True, # 打印详细训练信息
