@@ -156,7 +156,7 @@ bezdekIris | 动态 | 106.36 | 1000 | 0.129733
 以下是程序执行情况:
 
 ```bash
-python3 -m neural_networks.dynamic_learning_rate       
+$ python3 -m neural_networks.dynamic_learning_rate       
 训练集: iris, 固定学习率.
 输入 - 训练集:
      sepal length  sepal width  petal length  petal width           class
@@ -319,3 +319,5 @@ CONST_CONFIG_KEY_VERBOSE: True, # 打印详细训练信息
 2: 0.475879 (+0.003535) 0.200000
 ...
 ```
+
+## 5.8 根据式(5.18)和(5.19),试构造一个能解决异或问题的单层RBF神经网络.
