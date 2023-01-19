@@ -1,6 +1,7 @@
 #-*-coding:utf-8-*- 
 from .neural_networks_base import *
-
+import time
+import sys
 def accumulated_back_propagation(nn: NeualNetworks, training_set: TrainingSet, learning_rate_provider: Callable[[Any, Dict[str, Any]], Tuple[float, Any]], stop_function: Callable[[TrainingSet, NeualNetworks, Any, Dict[str, Any]], Tuple[bool, Any]], config: Dict[str, Any] = {}) -> None:
     """累积误差传播算法(Accumulated Back Propagation)的实现.
     
@@ -55,7 +56,10 @@ def accumulated_back_propagation(nn: NeualNetworks, training_set: TrainingSet, l
     acc_learning_rate = None
     epoch = 0 
     ce_list = []
-    print('开始训练神经网络.\n轮次: 累积误差 (较上次变化)')
+    st = time.time()
+    print('开始训练神经网络.')
+    if CONST_CONFIG_KEY_VERBOSE in config and config[CONST_CONFIG_KEY_VERBOSE]:
+        print('轮次: 累积误差 (较上次变化) 学习率')
 
     while True:
         ce = nn.cumulative_error(training_set)
@@ -67,7 +71,11 @@ def accumulated_back_propagation(nn: NeualNetworks, training_set: TrainingSet, l
         (learning_rate, acc_learning_rate) = learning_rate_provider(acc_learning_rate, config)
 
         # 打印误差和网络
-        print('%d: %.6f (%+.6f) %.6f' % (epoch, ce, (ce - ce_last), learning_rate))
+        if CONST_CONFIG_KEY_VERBOSE in config and config[CONST_CONFIG_KEY_VERBOSE]:
+            print('%d: %.6f (%+.6f) %.6f' % (epoch, ce, (ce - ce_last), learning_rate))
+        elif epoch % 10 == 0:
+            print('.', end='')
+            sys.stdout.flush()
         # 3. for all (xk, yk) ∈ trainning_set do
         for index, sample in training_set.samples.iterrows():
 
@@ -131,22 +139,28 @@ def accumulated_back_propagation(nn: NeualNetworks, training_set: TrainingSet, l
         epoch = epoch + 1
     ce = nn.cumulative_error(training_set)
     ce_last = ce if not ce_list else ce_list[-1]
-    print('%d: %.6f (%+.6f) %.6f' % (epoch, ce, (ce - ce_last), learning_rate))
-    print('训练完成.')
-
+    if CONST_CONFIG_KEY_VERBOSE in config and config[CONST_CONFIG_KEY_VERBOSE]:
+        print('%d: %.6f (%+.6f) %.6f' % (epoch, ce, (ce - ce_last), learning_rate))
+    else:
+        print('.')
+    epoch = epoch + 1
+    et = time.time()
+    elapsed_time = et - st
+    print('训练完成, 耗时: %.2fs, 轮次: %d, 累计误差: %.6f.' % (elapsed_time, epoch, ce))
 if __name__ == '__main__':
     pd.set_option('mode.chained_assignment', None)
     df = pd.read_csv('data/西瓜数据集 3.0.csv')
     sample_set = df[['密度', '含糖率', '好瓜']]
     training_set = TrainingSet(df[['密度', '含糖率', '好瓜']], '好瓜')
 
-    print('输入:')
+    print('输入 - 训练集:')
     print(training_set)
     config = {
-        CONST_CONFIG_KEY_TIMES: 2000, # 停止条件是训练2000轮
+        CONST_CONFIG_KEY_STOP_EPOCH: 2000, # 停止条件是训练2000轮
         CONST_CONFIG_KEY_LEARNING_RATE: 0.1 # 学习率
         } 
     nn = NeualNetworks([2, 2, 2])
+    print('输入 - 配置: %s' % config)
     accumulated_back_propagation(nn, training_set, fixed_learning_rate_provider, stop_function_by_times, config)
     print('输出-神经网络:')
     print(nn)

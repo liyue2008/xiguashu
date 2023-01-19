@@ -26,23 +26,38 @@ def dynamic_learning_rate_provider(accumulator: DynamicLRAccumulator, config: Di
     accumulator.current_epoch = accumulator.current_epoch + 1
     return (accumulator.learning_rate, accumulator)
 
+def bp_nn(training_set_path: str, learning_rate_provider: Callable[[Any, Dict[str, Any]], Tuple[float, Any]], stop_function: Callable[[TrainingSet, NeualNetworks, Any, Dict[str, Any]], Tuple[bool, Any]], config: Dict[str, Any] = {}) -> None:
+    
+    df = pd.read_csv(training_set_path, header = None)
+    df.columns = ['sepal length', 'sepal width', 'petal length', 'petal width', 'class']
+    training_set = TrainingSet(df, 'class')
+
+    print('输入 - 训练集:')
+    print(training_set)
+    print('输入 - 配置: %s' % config)
+    nn = NeualNetworks([4, 4, 3])
+    back_propagation(nn, training_set, learning_rate_provider, stop_function, config)
+    print('输出-神经网络:')
+    print(nn)
 
 if __name__ == '__main__':
     pd.set_option('mode.chained_assignment', None)
-    df = pd.read_csv('data/iris/iris.data', header = None)
-    df.columns = ['sepal length', 'sepal width', 'petal length', 'petal width', 'class']
-    print(df)
-    training_set = TrainingSet(df, 'class')
-
-    print('输入:')
-    print(training_set)
     config = {
-        CONST_CONFIG_KEY_CE: 0.05, # 停止条件是累积误差小于0.05
-        CONST_CONFIG_KEY_LEARNING_RATE: 0.3, # 起始学习率
-        CONST_CONFIG_KEY_LEARNING_RATE_EPOCH: 10,
-        CONST_CONFIG_KEY_LEARNING_RATE_GAMMA: 0.99
-        } 
-    nn = NeualNetworks([4, 4, 3])
-    back_propagation(nn, training_set, dynamic_learning_rate_provider, stop_function_by_target_ce, config)
-    print('输出-神经网络:')
-    print(nn)
+        # CONST_CONFIG_KEY_VERBOSE: True, # 打印详细训练信息
+        CONST_CONFIG_KEY_CE: 0.02, # 停止条件是累积误差小于0.05
+        CONST_CONFIG_KEY_STOP_EPOCH: 1000, # 最多训练1000轮 
+        CONST_CONFIG_KEY_LEARNING_RATE: 0.2, # 起始学习率
+        CONST_CONFIG_KEY_LEARNING_RATE_EPOCH: 10, # 每多少轮训练调整一次学习率
+        CONST_CONFIG_KEY_LEARNING_RATE_GAMMA: 0.93 # 每次调整学习率的系数: 新学习率 = 旧学习率 * 系数
+    } 
+    print('训练集: iris, 固定学习率.')
+    bp_nn('data/iris/iris.data', fixed_learning_rate_provider, stop_function_by_target_ce, config)
+
+    print('训练集: iris, 动态学习率.')
+    bp_nn('data/iris/iris.data', dynamic_learning_rate_provider, stop_function_by_target_ce, config)
+
+    print('训练集: bezdekIris, 固定学习率.')
+    bp_nn('data/iris/bezdekIris.data', fixed_learning_rate_provider, stop_function_by_target_ce, config)
+
+    print('训练集: bezdekIris, 动态学习率.')
+    bp_nn('data/iris/bezdekIris.data', dynamic_learning_rate_provider, stop_function_by_target_ce, config)

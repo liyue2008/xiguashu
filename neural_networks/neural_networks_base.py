@@ -12,7 +12,8 @@ def sigmoid_activation_function(x: float) -> float:
 def input_activation_function(x: float) -> float:
     return x
 
-CONST_CONFIG_KEY_TIMES = 'times'
+CONST_CONFIG_KEY_STOP_EPOCH = 'stop_epoch'
+CONST_CONFIG_KEY_VERBOSE = 'verbose'
 def stop_function_by_times(training_set: TrainingSet, neualNetworks: NeualNetworks, accumulator: int, config: Dict[str, Any]) -> Tuple[bool, int]:
     """ 判断训练停止条件的函数, 达到既定训练次数后就停止. 
         Parameters
@@ -32,12 +33,12 @@ def stop_function_by_times(training_set: TrainingSet, neualNetworks: NeualNetwor
             accumulator: Any
                 累加器. 
     """
-    training_times = config[CONST_CONFIG_KEY_TIMES]
-    assert (training_times and type(training_times) is int and training_times > 0), "停止次数(参数config[%s])必须是正整数!" % (CONST_CONFIG_KEY_TIMES)
+    stop_epoch = config[CONST_CONFIG_KEY_STOP_EPOCH]
+    assert (stop_epoch and type(stop_epoch) is int and stop_epoch > 0), "停止次数(参数config[%s])必须是正整数!" % CONST_CONFIG_KEY_STOP_EPOCH
     if not accumulator:
         accumulator = 0
     accumulator = accumulator + 1
-    return (accumulator >= training_times, accumulator)
+    return (accumulator >= stop_epoch, accumulator)
 CONST_CONFIG_KEY_CE = 'cumulative_error'
 def stop_function_by_target_ce(training_set: TrainingSet, neualNetworks: NeualNetworks, accumulator: int, config: Dict[str, Any]) -> Tuple[bool, int]:
     """ 判断训练停止条件的函数, 累积误差达到既定目标就停止. 
@@ -50,7 +51,7 @@ def stop_function_by_target_ce(training_set: TrainingSet, neualNetworks: NeualNe
             accumulator: Any
                 累加器. 这是一个任意类型的变量, 其类型可由实现自行定义, 用于多次调用停止函数时记录一些需要累计的数据.
             config: Dict[str, Any]
-                训练配置, 这里需接收一个停止次数参数, key为CONST_CONFIG_KEY_TIMES, value必须为正整数.
+                训练配置, 这里需接收一个停止次数参数, key为CONST_CONFIG_KEY_STOP_EPOCH, value必须为正整数.
         Returns
         -------
             stop: bool
@@ -62,7 +63,16 @@ def stop_function_by_target_ce(training_set: TrainingSet, neualNetworks: NeualNe
     target_ce = config[CONST_CONFIG_KEY_CE]
     assert (target_ce and type(target_ce) is float and target_ce > 0 and target_ce < 1), "目标累积误差(参数config[%s])必须是(0, 1)范围的浮点数!" % (CONST_CONFIG_KEY_CE)
     ce = neualNetworks.cumulative_error(training_set)
-    return (ce <= target_ce, accumulator)
+    
+    stop_epoch = config[CONST_CONFIG_KEY_STOP_EPOCH]
+    if not (stop_epoch and type(stop_epoch) is int and stop_epoch > 0):
+        stop_epoch = 0
+    if not accumulator:
+        accumulator = 0
+    accumulator = accumulator + 1
+
+
+    return (ce <= target_ce or (stop_epoch > 0 and accumulator >= stop_epoch ), accumulator) 
 
 def calc_layer_gradient(nn: NeualNetworks,layer_index: int, output_current_layer: List[float], gradient_upper_layer: List[float]) -> List[float]:
     """根据式(5.15)计算一层神经元的梯度项.
@@ -490,14 +500,14 @@ class NeualNetworks:
         return ce / len(training_set)
 
 CONST_CONFIG_KEY_LEARNING_RATE = 'learning_rate'
-def fixed_learning_rate_provider(accumulator: float, config: Dict[str, Any]) -> Tuple(float, float):
+def fixed_learning_rate_provider(accumulator: float, config: Dict[str, Any]) -> Tuple[float, float]:
     # 目标累积误差
     if accumulator and type(accumulator) is float:
-        return accumulator
+        learning_rate = accumulator
     else:
         learning_rate = config[CONST_CONFIG_KEY_LEARNING_RATE]
         assert (learning_rate and type(learning_rate) is float and learning_rate > 0 and learning_rate < 1), "学习率(参数config[%s])必须是(0, 1)范围的浮点数!" % (CONST_CONFIG_KEY_LEARNING_RATE)
         accumulator = learning_rate
-        return (learning_rate, accumulator)
+    return (learning_rate, accumulator)
 
 
