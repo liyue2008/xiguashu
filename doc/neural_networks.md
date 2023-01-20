@@ -75,7 +75,7 @@ $ python3 -m neural_networks.back_propagation
 
 ### 累积BP算法
 
-累积BP算法在西瓜数据集3.0上训练20轮：
+累积BP算法在西瓜数据集3.0上训练2000轮：
 
 ```bash
 $ python3 -m neural_networks.accumulated_back_propagation
@@ -322,4 +322,12 @@ CONST_CONFIG_KEY_VERBOSE: True, # 打印详细训练信息
 ...
 ```
 
-## 5.8 根据式(5.18)和(5.19),试构造一个能解决异或问题的单层RBF神经网络.
+## 5.7 根据式(5.18)和(5.19),试构造一个能解决异或问题的单层RBF神经网络.
+
+参考[这个实现](https://blog.csdn.net/m0_37822685/article/details/100198023).
+
+## 5.8 从网上下载或自己编程实现SOM网络，并观察其在西瓜数据集3.0a上产生的结果.
+
+## 5.9* 试推导用于Elman网络的BP算法.
+
+## 5.10 从网上下载或自己编程实现一个卷积神经网络，并在[手写字符识别数据MNIST](http://yann.lecun.com/exdb/mnist/)上进行实验测试.
